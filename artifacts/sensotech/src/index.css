@@ -1,0 +1,206 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --font-sans: var(--app-font-sans);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: 140 30% 8%;
+  --foreground: 120 20% 95%;
+  --border: 140 20% 20%;
+  --input: 140 20% 15%;
+  --ring: 142 76% 36%;
+  --card: 140 25% 10%;
+  --card-foreground: 120 20% 95%;
+  --primary: 142 76% 36%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 140 20% 15%;
+  --secondary-foreground: 120 20% 90%;
+  --muted: 140 20% 15%;
+  --muted-foreground: 140 10% 60%;
+  --accent: 142 76% 36%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 85% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --radius: 0.75rem;
+  --app-font-sans: 'Inter', sans-serif;
+  --app-font-serif: Georgia, serif;
+  --app-font-mono: Menlo, monospace;
+}
+
+.dark {
+  --background: 140 30% 4%;
+  --foreground: 120 20% 90%;
+  --border: 140 15% 12%;
+  --input: 140 15% 8%;
+  --ring: 142 76% 30%;
+  --card: 140 25% 6%;
+  --card-foreground: 120 20% 90%;
+  --primary: 142 76% 30%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 140 20% 10%;
+  --secondary-foreground: 120 20% 85%;
+  --muted: 140 20% 10%;
+  --muted-foreground: 140 10% 50%;
+  --accent: 142 76% 30%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 85% 55%;
+  --destructive-foreground: 0 0% 100%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    min-height: 100vh;
+  }
+}
+
+/* Day/Night mode brightness */
+.night-mode {
+  filter: brightness(0.7);
+}
+
+/* Custom progress circle */
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.8s ease-in-out;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* Bottom nav */
+.bottom-nav {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Toggle switch */
+.toggle-switch {
+  transition: background 0.3s;
+}
+
+/* Farm card hover */
+.farm-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.farm-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+/* Backdrop overlay */
+.bg-overlay {
+  background: rgba(0, 10, 0, 0.62);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.3);
+  border-radius: 2px;
+}
+
+/* Language button */
+.lang-btn {
+  transition: all 0.2s ease;
+  border: 1.5px solid rgba(74, 222, 128, 0.3);
+}
+.lang-btn:hover {
+  border-color: rgba(74, 222, 128, 0.8);
+  background: rgba(74, 222, 128, 0.15);
+  transform: scale(1.03);
+}
+.lang-btn:active {
+  transform: scale(0.97);
+}
+
+/* Pulse animation for mic */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.mic-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(74, 222, 128, 0.6);
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* Input fields */
+.form-input {
+  background: rgba(0, 20, 0, 0.5);
+  border: 1.5px solid rgba(74, 222, 128, 0.3);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 16px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus {
+  border-color: rgba(74, 222, 128, 0.8);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+}
+.form-input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+.form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 10, 0, 0.3);
+  border-color: rgba(74, 222, 128, 0.1);
+}
+
+/* Weather icons */
+.weather-card {
+  background: rgba(0, 20, 0, 0.5);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  min-width: 72px;
+}
+
+/* AI section card */
+.ai-section {
+  background: rgba(0, 25, 0, 0.6);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
