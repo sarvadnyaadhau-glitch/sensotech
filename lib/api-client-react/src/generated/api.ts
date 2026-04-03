@@ -5,18 +5,25 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  FarmAIRequest,
+  FarmAIResponse,
+  HealthStatus,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -99,3 +106,89 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Ask the SENSOTECH AI a farming question
+ */
+export const getAskFarmAIUrl = () => {
+  return `/api/farm-ai/ask`;
+};
+
+export const askFarmAI = async (
+  farmAIRequest: FarmAIRequest,
+  options?: RequestInit,
+): Promise<FarmAIResponse> => {
+  return customFetch<FarmAIResponse>(getAskFarmAIUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(farmAIRequest),
+  });
+};
+
+export const getAskFarmAIMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof askFarmAI>>,
+    TError,
+    { data: BodyType<FarmAIRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof askFarmAI>>,
+  TError,
+  { data: BodyType<FarmAIRequest> },
+  TContext
+> => {
+  const mutationKey = ["askFarmAI"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof askFarmAI>>,
+    { data: BodyType<FarmAIRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return askFarmAI(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AskFarmAIMutationResult = NonNullable<
+  Awaited<ReturnType<typeof askFarmAI>>
+>;
+export type AskFarmAIMutationBody = BodyType<FarmAIRequest>;
+export type AskFarmAIMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Ask the SENSOTECH AI a farming question
+ */
+export const useAskFarmAI = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof askFarmAI>>,
+    TError,
+    { data: BodyType<FarmAIRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof askFarmAI>>,
+  TError,
+  { data: BodyType<FarmAIRequest> },
+  TContext
+> => {
+  return useMutation(getAskFarmAIMutationOptions(options));
+};

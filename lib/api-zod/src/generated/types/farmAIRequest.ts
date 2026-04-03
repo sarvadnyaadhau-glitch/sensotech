@@ -5,17 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
-}
-
-export type FarmAIRequestSensorData = {
-  moisture: number;
-  ph: number;
-  ec: number;
-  nitrogen: number;
-  temperature: number;
-};
+import type { FarmAIRequestSensorData } from "./farmAIRequestSensorData";
 
 export interface FarmAIRequest {
   question: string;
@@ -23,9 +13,4 @@ export interface FarmAIRequest {
   sensorData: FarmAIRequestSensorData;
   farmName: string;
   cropType: string;
-}
-
-export interface FarmAIResponse {
-  answer: string;
-  confidence: string;
 }

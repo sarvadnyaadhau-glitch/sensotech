@@ -14,3 +14,25 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary Ask the SENSOTECH AI a farming question
+ */
+export const AskFarmAIBody = zod.object({
+  question: zod.string(),
+  language: zod.string(),
+  sensorData: zod.object({
+    moisture: zod.number(),
+    ph: zod.number(),
+    ec: zod.number(),
+    nitrogen: zod.number(),
+    temperature: zod.number(),
+  }),
+  farmName: zod.string(),
+  cropType: zod.string(),
+});
+
+export const AskFarmAIResponse = zod.object({
+  answer: zod.string(),
+  confidence: zod.string(),
+});

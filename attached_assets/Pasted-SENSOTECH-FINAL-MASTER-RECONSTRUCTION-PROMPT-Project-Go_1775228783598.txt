@@ -1,0 +1,27 @@
+SENSOTECH - FINAL MASTER RECONSTRUCTION PROMPT
+Project Goal: Complete UI/UX overhaul and AI Logic integration for SENSOTECH Smart Farming App.
+1. Branding & Visual Identity (STRICT):
+One-Line Name: On EVERY page, the name 'SENSOTECH' must be in one single line. Do not split it.
+Logo: Change the logo to a Minimalist Green Leaf icon (use Lucide-react 'Leaf' icon).
+Home Screen Layout: Add a professional Header section at the top with the SENSOTECH logo and Name. Below this, show the title 'My Farms' before displaying the farm cards.
+General Theme: Zero white backgrounds. Use high-quality farm-themed image overlays with a dark (0.6 opacity) tint. Use high-contrast bold fonts for outdoor readability.
+Auto-Theme: Implement automated Day/Night brightness mode based on local time.
+2. Correct Farm Image Mapping:
+Update the background images for the following cards (Remove any incorrect images like bananas):
+Mauli Farm: Must use a high-quality Lemon (Nimbu) Orchard image. 🍋
+Sarvadnya Farm: Must use a clear Mushroom (Mushroom 🍄) Farm image.
+Kranti Farm: Must use a high-quality Apple Orchard image. 🍎
+3. Functional Language Logic:
+Implement a full translation system (JSON or State-based). When a user selects 'मराठी' or 'हिंदी', the ENTIRE app (including Sensor names like 'Moisture', 'pH', Button text, and Navigation labels) must change to that language.
+4. Advanced Farm Dashboard & Sensor Charts:
+Size: Make the 5 circular progress charts much larger. They should dominate the 'Sensor Readings' section with thicker strokeWidth.
+Included Charts: 1. Soil Moisture (%), 2. pH Value, 3. EC Value (ms), 4. Nitrogen (N), 5. Temperature (°C).
+Pump Control: Below the charts, keep the 'Pump Auto ON/OFF' toggle. When ON, status should change to "Pump is Running". Below it, keep the text: "System Status: Self-Operated (AI Controlled)".
+5. SENSOTECH Voice AI "The Brain" (Gemini Integration):
+Mic Button: Make the Mic button functional using the Web Speech API (Speech-to-Text).
+AI Processing: Link the converted text to the Gemini 3 Flash API.
+AI Personality: The AI must act as a 'Smart Farming Expert'. It should analyze the dashboard's current sensor data to answer questions (e.g., "Should I water my farm?" or "Is my soil pH okay?").
+Fallback Logic: If the question is non-farming related or too complex, the AI should say: "I am not sure about this. For better guidance, please click on the Expert Call button to talk to our specialist."
+Output: Use Text-to-Speech to speak the answer back in the user's selected language. While processing, show a pulsing animation and a popup: "Listening... SENSOTECH AI is processing your request."
+6. Expert Support:
+Expert Call Button: Ensure this is a functional-looking dummy button. On click, trigger a calling animation/notification: "Connecting to SENSOTECH Expert..."

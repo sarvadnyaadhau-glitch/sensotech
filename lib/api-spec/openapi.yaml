@@ -1,6 +1,5 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
   description: API specification
@@ -10,6 +9,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: farm-ai
+    description: SENSOTECH Farm AI operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /farm-ai/ask:
+    post:
+      operationId: askFarmAI
+      tags: [farm-ai]
+      summary: Ask the SENSOTECH AI a farming question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FarmAIRequest"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmAIResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +52,49 @@ components:
           type: string
       required:
         - status
-
+    FarmAIRequest:
+      type: object
+      properties:
+        question:
+          type: string
+        language:
+          type: string
+        sensorData:
+          type: object
+          properties:
+            moisture:
+              type: number
+            ph:
+              type: number
+            ec:
+              type: number
+            nitrogen:
+              type: number
+            temperature:
+              type: number
+          required:
+            - moisture
+            - ph
+            - ec
+            - nitrogen
+            - temperature
+        farmName:
+          type: string
+        cropType:
+          type: string
+      required:
+        - question
+        - language
+        - sensorData
+        - farmName
+        - cropType
+    FarmAIResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+        confidence:
+          type: string
+      required:
+        - answer
+        - confidence

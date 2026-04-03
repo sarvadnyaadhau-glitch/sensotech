@@ -5,6 +5,7 @@ import ProfileSetup from "@/pages/ProfileSetup";
 import HomeScreen from "@/pages/HomeScreen";
 import FarmDashboard from "@/pages/FarmDashboard";
 import AIAdvisor from "@/pages/AIAdvisor";
+import { type Language } from "@/lib/translations";
 
 type Step = "login" | "language" | "profile" | "home" | "dashboard" | "ai";
 type NavTab = "home" | "chat" | "news";
@@ -20,7 +21,6 @@ function useNightMode() {
     const h = new Date().getHours();
     return h >= 18 || h < 6;
   });
-
   useEffect(() => {
     const checkTime = () => {
       const h = new Date().getHours();
@@ -29,12 +29,12 @@ function useNightMode() {
     const interval = setInterval(checkTime, 60000);
     return () => clearInterval(interval);
   }, []);
-
   return isNight;
 }
 
 export default function App() {
   const [step, setStep] = useState<Step>("login");
+  const [lang, setLang] = useState<Language>("en");
   const [profile, setProfile] = useState<Profile>({ name: "", mobile: "", address: "Akola, Maharashtra" });
   const [activeFarm, setActiveFarm] = useState<string>("");
   const [activeNav, setActiveNav] = useState<NavTab>("home");
@@ -50,35 +50,18 @@ export default function App() {
     }
   }, [isNight]);
 
-  if (step === "login") {
-    return <Login onLogin={() => setStep("language")} />;
-  }
-
-  if (step === "language") {
-    return <LanguageSelect onSelect={() => setStep("profile")} />;
-  }
-
-  if (step === "profile") {
-    return (
-      <ProfileSetup
-        onComplete={(p) => {
-          setProfile(p);
-          setStep("home");
-        }}
-      />
-    );
-  }
+  if (step === "login") return <Login onLogin={() => setStep("language")} lang={lang} />;
+  if (step === "language") return <LanguageSelect onSelect={(l) => { setLang(l); setStep("profile"); }} />;
+  if (step === "profile") return <ProfileSetup onComplete={(p) => { setProfile(p); setStep("home"); }} lang={lang} />;
 
   if (step === "home") {
     return (
       <HomeScreen
         profile={profile}
-        onFarmClick={(farmId) => {
-          setActiveFarm(farmId);
-          setStep("dashboard");
-        }}
+        onFarmClick={(farmId) => { setActiveFarm(farmId); setStep("dashboard"); }}
         onNav={(tab) => setActiveNav(tab)}
         activeNav={activeNav}
+        lang={lang}
       />
     );
   }
@@ -87,15 +70,15 @@ export default function App() {
     return (
       <FarmDashboard
         farmId={activeFarm}
+        profile={profile}
         onBack={() => setStep("home")}
         onAIAdvisor={() => setStep("ai")}
+        lang={lang}
       />
     );
   }
 
-  if (step === "ai") {
-    return <AIAdvisor onBack={() => setStep("dashboard")} />;
-  }
+  if (step === "ai") return <AIAdvisor onBack={() => setStep("dashboard")} lang={lang} />;
 
   return null;
 }
