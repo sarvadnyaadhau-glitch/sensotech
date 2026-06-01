@@ -79,11 +79,83 @@ function CircleProgress({
   );
 }
 
+interface WeatherDay {
+  dayKey: string;
+  icon: string;
+  high: number;
+  low: number;
+  cond: string;
+  isToday: boolean;
+}
+
 interface VoiceAIState {
   phase: "idle" | "listening" | "processing" | "speaking";
   transcript: string;
   answer: string;
   error: string;
+}
+
+function wmoToWeather(code: number): { icon: string; cond: string } {
+  if (code === 0) return { icon: "☀️", cond: "Sunny" };
+  if (code === 1) return { icon: "🌤️", cond: "Clear" };
+  if (code === 2) return { icon: "⛅", cond: "Partly" };
+  if (code === 3) return { icon: "☁️", cond: "Cloudy" };
+  if (code === 45 || code === 48) return { icon: "🌫️", cond: "Foggy" };
+  if (code >= 51 && code <= 55) return { icon: "🌦️", cond: "Drizzle" };
+  if (code >= 61 && code <= 65) return { icon: "🌧️", cond: "Rainy" };
+  if (code >= 71 && code <= 77) return { icon: "❄️", cond: "Snow" };
+  if (code >= 80 && code <= 82) return { icon: "🌧️", cond: "Showers" };
+  if (code === 85 || code === 86) return { icon: "🌨️", cond: "Snow" };
+  if (code === 95) return { icon: "⛈️", cond: "Storm" };
+  if (code === 96 || code === 99) return { icon: "⛈️", cond: "Storm" };
+  return { icon: "🌤️", cond: "Clear" };
+}
+
+const CACHE_KEY = "akola_weather_cache";
+
+function getCachedWeather(): { date: string; days: WeatherDay[] } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAkolaWeather(): Promise<WeatherDay[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const cached = getCachedWeather();
+  if (cached && cached.date === today) return cached.days;
+
+  const res = await fetch(
+    "https://api.open-meteo.com/v1/forecast?latitude=20.7002&longitude=77.0082&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FKolkata&forecast_days=5"
+  );
+  if (!res.ok) throw new Error("Weather fetch failed");
+  const data = await res.json();
+
+  const days: WeatherDay[] = (data.daily.time as string[]).map((dateStr, i) => {
+    const date = new Date(dateStr);
+    const { icon, cond } = wmoToWeather(data.daily.weathercode[i] as number);
+    const dayLabel = i === 0
+      ? "Today"
+      : i === 1
+      ? "Tmrw"
+      : date.toLocaleDateString("en-US", { weekday: "short" });
+    return {
+      dayKey: dayLabel,
+      icon,
+      high: Math.round(data.daily.temperature_2m_max[i] as number),
+      low: Math.round(data.daily.temperature_2m_min[i] as number),
+      cond,
+      isToday: i === 0,
+    };
+  });
+
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today, days }));
+  } catch { /* ignore */ }
+
+  return days;
 }
 
 export default function FarmDashboard({
@@ -94,49 +166,31 @@ export default function FarmDashboard({
   lang,
 }: FarmDashboardProps) {
   const [pumpOn, setPumpOn] = useState(true);
-  const [weatherDays, setWeatherDays] = useState([]);
+  const [weatherDays, setWeatherDays] = useState<WeatherDay[]>([]);
+  const [weatherLoading, setWeatherLoading] = useState(true);
 
   useEffect(() => {
-    async function getWeather() {
+    let cancelled = false;
+    async function load() {
       try {
-        const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/forecast?q=Akola,IN&appid=${apiKey}&units=metric`,
-        );
-
-        const data = await res.json();
-        console.log(data);
-        if (!data.list) return;
-
-        const daily = data.list
-          .filter((item: any, index: number) => index % 8 === 0)
-          .slice(0, 5);
-
-        const formatted = daily.map((item: any) => ({
-          dayKey: new Date(item.dt_txt).toLocaleDateString("en-US", {
-            weekday: "short",
-          }),
-          icon: item.weather[0].main.includes("Rain")
-            ? "🌧️"
-            : item.weather[0].main.includes("Cloud")
-              ? "☁️"
-              : item.weather[0].main.includes("Storm")
-                ? "⛈️"
-                : "☀️",
-          high: Math.round(item.main.temp_max),
-          low: Math.round(item.main.temp_min),
-          cond: item.weather[0].main,
-        }));
-
-        setWeatherDays(formatted);
-      } catch (error: any) {
-        console.log("Weather Error Message:", error?.message);
-        console.log("Full Error:", error);
+        const days = await fetchAkolaWeather();
+        if (!cancelled) { setWeatherDays(days); setWeatherLoading(false); }
+      } catch {
+        if (!cancelled) setWeatherLoading(false);
       }
     }
-    getWeather();
-    setInterval(getWeather, 300000);
+    load();
+
+    // Refresh at midnight so the rolling window advances automatically
+    const now = new Date();
+    const msUntilMidnight =
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime();
+    const midnightTimer = setTimeout(() => {
+      localStorage.removeItem(CACHE_KEY);
+      load();
+    }, msUntilMidnight);
+
+    return () => { cancelled = true; clearTimeout(midnightTimer); };
   }, []);
   const [connectingExpert, setConnectingExpert] = useState(false);
   const [voice, setVoice] = useState<VoiceAIState>({
@@ -334,31 +388,48 @@ export default function FarmDashboard({
               <h2 className="text-white font-bold text-base">
                 {t(lang, "weatherAkola")}
               </h2>
-              <span className="text-white/40 text-xs">Maharashtra</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                <span className="text-white/40 text-xs">Akola, MH</span>
+              </div>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {weatherDays.map((day, i) => (
-                <div
-                  key={day.dayKey}
-                  className="weather-card flex-shrink-0"
-                  style={{
-                    background:
-                      i === 0
-                        ? "rgba(74, 222, 128, 0.15)"
-                        : "rgba(0, 20, 0, 0.5)",
-                    border:
-                      i === 0
-                        ? "1px solid rgba(74, 222, 128, 0.4)"
-                        : "1px solid rgba(74, 222, 128, 0.15)",
-                  }}
-                >
-                  <p className="text-white/50 text-xs mb-1">{day.dayKey}</p>
-                  <div className="text-2xl mb-1">{day.icon}</div>
-                  <p className="text-white font-bold text-sm">{day.high}°</p>
-                  <p className="text-white/40 text-xs">{day.low}°</p>
-                  <p className="text-green-300 text-xs mt-1">{day.cond}</p>
-                </div>
-              ))}
+              {weatherLoading
+                ? Array.from({ length: 5 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="weather-card flex-shrink-0 animate-pulse"
+                      style={{ background: "rgba(0,20,0,0.4)", border: "1px solid rgba(74,222,128,0.1)" }}
+                    >
+                      <div className="w-8 h-2 rounded bg-white/10 mb-2" />
+                      <div className="w-8 h-7 rounded bg-white/10 mb-2" />
+                      <div className="w-6 h-3 rounded bg-white/10 mb-1" />
+                      <div className="w-6 h-2 rounded bg-white/10" />
+                    </div>
+                  ))
+                : weatherDays.map((day) => (
+                    <div
+                      key={day.dayKey}
+                      className="weather-card flex-shrink-0"
+                      style={{
+                        background: day.isToday
+                          ? "rgba(74, 222, 128, 0.15)"
+                          : "rgba(0, 20, 0, 0.5)",
+                        border: day.isToday
+                          ? "1px solid rgba(74, 222, 128, 0.45)"
+                          : "1px solid rgba(74, 222, 128, 0.15)",
+                      }}
+                    >
+                      <p className="font-bold mb-1" style={{ fontSize: "10px", color: day.isToday ? "#4ade80" : "rgba(255,255,255,0.5)" }}>
+                        {day.dayKey}
+                      </p>
+                      <div className="text-2xl mb-1">{day.icon}</div>
+                      <p className="text-white font-bold text-sm">{day.high}°</p>
+                      <p className="text-white/40 text-xs">{day.low}°</p>
+                      <p className="text-xs mt-1" style={{ color: day.isToday ? "#86efac" : "rgba(134,239,172,0.7)" }}>{day.cond}</p>
+                    </div>
+                  ))
+              }
             </div>
           </div>
 
