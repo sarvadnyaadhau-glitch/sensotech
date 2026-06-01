@@ -15,11 +15,11 @@ const farms = [
     id: "mauli",
     name: "Mauli Farm",
     cropKey: "lemonOrchard",
-    emoji: "🍌",
+    emoji: "🍋",
     area: "4.5 Acres",
     statusKey: "healthy",
     statusColor: "#4ade80",
-    image: "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1587132137056-bfbf0166836e?w=800&q=80",
   },
   {
     id: "sarvadnya",
