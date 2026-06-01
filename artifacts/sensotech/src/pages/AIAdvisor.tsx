@@ -170,8 +170,8 @@ export default function AIAdvisor({ onBack, lang }: AIAdvisorProps) {
         <div
           className="flex items-center gap-3 mx-4 mt-4 rounded-xl px-4 py-3"
           style={{
-            background: "rgba(74, 222, 128, 0.08)",
-            border: "1px solid rgba(74, 222, 128, 0.2)",
+            background: "rgba(0, 10, 0, 0.85)",
+            border: "1px solid rgba(74, 222, 128, 0.25)",
           }}
         >
           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -214,15 +214,16 @@ export default function AIAdvisor({ onBack, lang }: AIAdvisorProps) {
               key={section.id}
               className="ai-section"
               style={{
-                background: section.bgColor,
+                background: "rgba(0, 10, 0, 0.88)",
                 border: `1px solid ${section.borderColor}`,
+                borderLeft: `3px solid ${section.color}`,
               }}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
-                    style={{ background: "rgba(0,0,0,0.3)" }}
+                    style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${section.borderColor}` }}
                   >
                     {section.icon}
                   </div>
@@ -233,31 +234,31 @@ export default function AIAdvisor({ onBack, lang }: AIAdvisorProps) {
                 <span
                   className="text-xs px-2 py-0.5 rounded-full font-bold flex-shrink-0"
                   style={{
-                    background: "rgba(0,0,0,0.3)",
+                    background: `${section.color}18`,
                     color: section.badgeColor,
-                    border: `1px solid ${section.badgeColor}40`,
+                    border: `1px solid ${section.badgeColor}50`,
                   }}
                 >
                   {section.badge}
                 </span>
               </div>
-              <p className="text-white/85 text-sm leading-relaxed mb-3">
+              <p className="text-white text-sm leading-relaxed mb-3">
                 {section.content}
               </p>
               <div
                 className="rounded-xl p-3 mb-3"
                 style={{
-                  background: "rgba(0,0,0,0.3)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                <p className="text-white/70 text-sm leading-relaxed">
+                <p className="text-white/80 text-sm leading-relaxed">
                   {section.sub}
                 </p>
               </div>
               <div className="flex items-start gap-2">
                 <span style={{ color: section.color }}>→</span>
-                <p className="text-sm" style={{ color: section.color }}>
+                <p className="text-sm font-medium" style={{ color: section.color }}>
                   {section.tip}
                 </p>
               </div>
@@ -268,8 +269,9 @@ export default function AIAdvisor({ onBack, lang }: AIAdvisorProps) {
           <div
             className="rounded-2xl p-5 mt-2"
             style={{
-              background: "rgba(74, 222, 128, 0.08)",
-              border: "1px solid rgba(74, 222, 128, 0.3)",
+              background: "rgba(0, 10, 0, 0.88)",
+              border: "1px solid rgba(74, 222, 128, 0.35)",
+              borderLeft: "3px solid #4ade80",
             }}
           >
             <div className="flex items-center gap-2 mb-3">
