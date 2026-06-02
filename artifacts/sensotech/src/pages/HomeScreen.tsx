@@ -263,7 +263,7 @@ function CommunityChat({ lang }: { lang: Language }) {
 
 function FarmingNews({ lang }: { lang: Language }) {
   const news = [
-    { id: 1, title: "Maharashtra Farmers Get New Subsidy Scheme for Drip Irrigation", channel: "AgriTV India", views: "2.4M", time: "2 days ago", thumb: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80", duration: "12:34" },
+    { id: 1, title: "Maharashtra Farmers Get New Subsidy Scheme for Drip Irrigation", channel: "AgriTV India", views: "2.4M", time: "2 days ago", thumb: "/maharashtra-subsidy-news.png", duration: "12:34" },
     { id: 2, title: "New AI Technology Predicts Pest Attacks 2 Weeks in Advance", channel: "KisanTV", views: "890K", time: "3 days ago", thumb: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=400&q=80", duration: "8:21" },
     { id: 3, title: "Water Conservation Techniques for Summer Farming - Expert Guide", channel: "Smart Farming", views: "1.2M", time: "4 days ago", thumb: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&q=80", duration: "15:07" },
     { id: 4, title: "MSP Rates Announced for Kharif 2025 Season", channel: "India AgriNews", views: "3.1M", time: "5 days ago", thumb: "https://images.unsplash.com/photo-1543257580-7269da773bf5?w=400&q=80", duration: "6:45" },
@@ -278,10 +278,23 @@ function FarmingNews({ lang }: { lang: Language }) {
           <div key={item.id} className="rounded-xl overflow-hidden" style={{ background: "rgba(0, 15, 0, 0.65)", border: "1px solid rgba(74, 222, 128, 0.15)" }}>
             <div className="relative">
               <img src={item.thumb} alt={item.title} className="w-full h-44 object-cover" />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.45) 100%)" }} />
               <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-white text-xs font-bold" style={{ background: "rgba(0,0,0,0.85)" }}>{item.duration}</div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", border: "2px solid rgba(255,255,255,0.5)" }}>
-                  <span style={{ marginLeft: "3px" }}>▶</span>
+                <div
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: "50%",
+                    background: "rgba(0,0,0,0.55)",
+                    border: "2.5px solid rgba(255,255,255,0.85)",
+                    backdropFilter: "blur(2px)",
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <polygon points="6,3 20,12 6,21" />
+                  </svg>
                 </div>
               </div>
             </div>
