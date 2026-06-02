@@ -264,7 +264,7 @@ function CommunityChat({ lang }: { lang: Language }) {
 function FarmingNews({ lang }: { lang: Language }) {
   const news = [
     { id: 1, title: "Maharashtra Farmers Get New Subsidy Scheme for Drip Irrigation", channel: "AgriTV India", views: "2.4M", time: "2 days ago", thumb: "/maharashtra-subsidy-news.png", duration: "12:34" },
-    { id: 2, title: "New AI Technology Predicts Pest Attacks 2 Weeks in Advance", channel: "KisanTV", views: "890K", time: "3 days ago", thumb: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=400&q=80", duration: "8:21" },
+    { id: 2, title: "New AI Technology Predicts Pest Attacks 2 Weeks in Advance", channel: "KisanTV", views: "890K", time: "3 days ago", thumb: "/ai-pest-prediction-news.png", duration: "8:21" },
     { id: 3, title: "Water Conservation Techniques for Summer Farming - Expert Guide", channel: "Smart Farming", views: "1.2M", time: "4 days ago", thumb: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&q=80", duration: "15:07" },
     { id: 4, title: "MSP Rates Announced for Kharif 2025 Season", channel: "India AgriNews", views: "3.1M", time: "5 days ago", thumb: "https://images.unsplash.com/photo-1543257580-7269da773bf5?w=400&q=80", duration: "6:45" },
     { id: 5, title: "Soil Health Card Program: How to Get Maximum Benefits", channel: "Krishi Jagat", views: "567K", time: "6 days ago", thumb: "https://images.unsplash.com/photo-1586771107445-d3ca888129ce?w=400&q=80", duration: "10:12" },
