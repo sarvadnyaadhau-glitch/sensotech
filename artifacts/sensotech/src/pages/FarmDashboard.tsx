@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Leaf, Mic, MicOff, Phone } from "lucide-react";
 import { t, type Language } from "@/lib/translations";
+import { useSensorData } from "@/lib/useSensorData";
 
 interface FarmDashboardProps {
   farmId: string;
@@ -9,14 +10,6 @@ interface FarmDashboardProps {
   onAIAdvisor: () => void;
   lang: Language;
 }
-
-const sensorData = {
-  moisture: 55,
-  ph: 6.8,
-  ec: 2.4,
-  nitrogen: 42,
-  temperature: 34,
-};
 
 function CircleProgress({
   value,
@@ -165,6 +158,7 @@ export default function FarmDashboard({
   onAIAdvisor,
   lang,
 }: FarmDashboardProps) {
+  const { data: sensorData } = useSensorData();
   const [pumpOn, setPumpOn] = useState(true);
   const [weatherDays, setWeatherDays] = useState<WeatherDay[]>([]);
   const [weatherLoading, setWeatherLoading] = useState(true);
@@ -267,9 +261,15 @@ export default function FarmDashboard({
           body: JSON.stringify({
             question: transcript,
             language: lang,
-            sensorData,
+            sensorData: {
+              moisture: sensorData.moisture,
+              ph: sensorData.ph,
+              nitrogen: sensorData.nitrogen,
+              phosphorus: sensorData.phosphorus,
+              potassium: sensorData.potassium,
+            },
             farmName: "Mauli Farm",
-            cropType: "Lemon Orchard",
+            cropType: sensorData.crop,
           }),
         });
         const data = await resp.json();
@@ -463,30 +463,30 @@ export default function FarmDashboard({
                   icon="🧪"
                 />
                 <CircleProgress
-                  value={sensorData.ec}
-                  max={5}
+                  value={sensorData.phosphorus}
+                  max={500}
                   color="#c084fc"
-                  label={t(lang, "ecValue")}
-                  unit="mS"
-                  icon="⚡"
+                  label="Phosphorus"
+                  unit="mg/L"
+                  icon="⚗️"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2 justify-items-center">
                 <CircleProgress
                   value={sensorData.nitrogen}
-                  max={100}
+                  max={200}
                   color="#4ade80"
                   label={t(lang, "nitrogen")}
                   unit="mg/L"
                   icon="🌿"
                 />
                 <CircleProgress
-                  value={sensorData.temperature}
-                  max={50}
+                  value={sensorData.potassium}
+                  max={500}
                   color="#fb923c"
-                  label={t(lang, "temperature")}
-                  unit="°C"
-                  icon="🌡️"
+                  label="Potassium"
+                  unit="mg/L"
+                  icon="🌾"
                 />
               </div>
             </div>
