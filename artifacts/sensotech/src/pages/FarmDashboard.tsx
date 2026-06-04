@@ -104,7 +104,7 @@ function wmoToWeather(code: number): { icon: string; cond: string } {
   return { icon: "🌤️", cond: "Clear" };
 }
 
-const CACHE_KEY = "akola_weather_cache";
+const CACHE_KEY = "akola_weather_cache_v2";
 
 function getCachedWeather(): { date: string; days: WeatherDay[] } | null {
   try {
@@ -121,14 +121,17 @@ async function fetchAkolaWeather(): Promise<WeatherDay[]> {
   if (cached && cached.date === today) return cached.days;
 
   const res = await fetch(
-    "https://api.open-meteo.com/v1/forecast?latitude=20.7002&longitude=77.0082&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FKolkata&forecast_days=5"
+    "https://api.open-meteo.com/v1/forecast?latitude=20.7002&longitude=77.0082&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FKolkata&forecast_days=5"
   );
   if (!res.ok) throw new Error("Weather fetch failed");
   const data = await res.json();
 
+  // API uses weather_code (new) or weathercode (old) — handle both
+  const weatherCodes: number[] = data.daily.weather_code ?? data.daily.weathercode ?? [];
+
   const days: WeatherDay[] = (data.daily.time as string[]).map((dateStr, i) => {
     const date = new Date(dateStr);
-    const { icon, cond } = wmoToWeather(data.daily.weathercode[i] as number);
+    const { icon, cond } = wmoToWeather(weatherCodes[i] ?? 0);
     const dayLabel = i === 0
       ? "Today"
       : i === 1
