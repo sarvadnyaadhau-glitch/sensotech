@@ -54,11 +54,24 @@ IMPORTANT RULES:
       ],
       config: {
         systemInstruction: systemPrompt,
-        maxOutputTokens: 256,
+        maxOutputTokens: 8192,
       },
     });
 
-    const answer = response.text ?? "Unable to process your question. Please try again.";
+    // Try multiple access patterns — SDK version differences
+    const answer: string =
+      response.text ||
+      (response as any).candidates?.[0]?.content?.parts?.[0]?.text ||
+      (response as any).candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ||
+      "";
+
+    req.log.info({ answerLength: answer.length, finishReason: (response as any).candidates?.[0]?.finishReason }, "Farm AI response");
+
+    if (!answer) {
+      res.status(500).json({ answer: "AI response was empty. Please try again.", confidence: "low" });
+      return;
+    }
+
     res.json({ answer, confidence: "high" });
   } catch (error) {
     req.log.error({ error }, "Farm AI error");
