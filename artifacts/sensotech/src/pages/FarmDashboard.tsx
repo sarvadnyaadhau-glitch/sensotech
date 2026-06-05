@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Leaf, Mic, MicOff, Phone } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Leaf, Mic, Phone } from "lucide-react";
 import { t, type Language } from "@/lib/translations";
 import { useSensorData } from "@/lib/useSensorData";
 
@@ -8,6 +8,7 @@ interface FarmDashboardProps {
   profile: { name: string; address: string };
   onBack: () => void;
   onAIAdvisor: () => void;
+  onVoiceAI: () => void;
   lang: Language;
 }
 
@@ -81,12 +82,6 @@ interface WeatherDay {
   isToday: boolean;
 }
 
-interface VoiceAIState {
-  phase: "idle" | "listening" | "processing" | "speaking";
-  transcript: string;
-  answer: string;
-  error: string;
-}
 
 function wmoToWeather(code: number): { icon: string; cond: string } {
   if (code === 0) return { icon: "☀️", cond: "Sunny" };
@@ -159,6 +154,7 @@ export default function FarmDashboard({
   profile,
   onBack,
   onAIAdvisor,
+  onVoiceAI,
   lang,
 }: FarmDashboardProps) {
   const { data: sensorData } = useSensorData();
@@ -190,137 +186,11 @@ export default function FarmDashboard({
     return () => { cancelled = true; clearTimeout(midnightTimer); };
   }, []);
   const [connectingExpert, setConnectingExpert] = useState(false);
-  const [voice, setVoice] = useState<VoiceAIState>({
-    phase: "idle",
-    transcript: "",
-    answer: "",
-    error: "",
-  });
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  useEffect(() => {
-    return () => {
-      recognitionRef.current?.abort();
-      window.speechSynthesis?.cancel();
-    };
-  }, []);
 
   const handleExpertCall = () => {
     setConnectingExpert(true);
     setTimeout(() => setConnectingExpert(false), 4000);
   };
-
-  const startVoice = () => {
-    if (voice.phase !== "idle") {
-      recognitionRef.current?.abort();
-      window.speechSynthesis?.cancel();
-      setVoice({ phase: "idle", transcript: "", answer: "", error: "" });
-      return;
-    }
-
-    const SpeechRecognition =
-      (
-        window as Window &
-          typeof globalThis & {
-            SpeechRecognition?: typeof window.SpeechRecognition;
-            webkitSpeechRecognition?: typeof window.SpeechRecognition;
-          }
-      ).SpeechRecognition ||
-      (
-        window as Window &
-          typeof globalThis & {
-            webkitSpeechRecognition?: typeof window.SpeechRecognition;
-          }
-      ).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setVoice((v) => ({
-        ...v,
-        error: "Voice not supported in this browser. Please use Chrome.",
-        phase: "idle",
-      }));
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang =
-      lang === "mr" ? "mr-IN" : lang === "hi" ? "hi-IN" : "en-IN";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognitionRef.current = recognition;
-
-    setVoice({ phase: "listening", transcript: "", answer: "", error: "" });
-
-    recognition.onresult = async (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0][0].transcript;
-      setVoice((v) => ({ ...v, phase: "processing", transcript }));
-
-      try {
-        const baseUrl = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-        const resp = await fetch(`${baseUrl}/api/farm-ai/ask`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: transcript,
-            language: lang,
-            sensorData: {
-              moisture: sensorData.moisture,
-              ph: sensorData.ph,
-              nitrogen: sensorData.nitrogen,
-              phosphorus: sensorData.phosphorus,
-              potassium: sensorData.potassium,
-            },
-            farmName: "Mauli Farm",
-            cropType: sensorData.crop,
-          }),
-        });
-        const data = await resp.json();
-        const answer: string =
-          data.answer || "Unable to process. Please try again.";
-        setVoice((v) => ({ ...v, phase: "speaking", answer }));
-
-        const utter = new SpeechSynthesisUtterance(answer);
-        utter.lang =
-          lang === "mr" ? "mr-IN" : lang === "hi" ? "hi-IN" : "en-IN";
-        utter.rate = 0.9;
-        synthRef.current = utter;
-        utter.onend = () => setVoice((v) => ({ ...v, phase: "idle" }));
-        window.speechSynthesis.speak(utter);
-      } catch {
-        setVoice((v) => ({
-          ...v,
-          phase: "idle",
-          error: "AI request failed. Please try again.",
-        }));
-      }
-    };
-
-    recognition.onerror = () => {
-      setVoice((v) => ({
-        ...v,
-        phase: "idle",
-        error: "Could not hear you. Please try again.",
-      }));
-    };
-
-    recognition.onend = () => {
-      if (voice.phase === "listening") {
-        setVoice((v) =>
-          v.phase === "listening" ? { ...v, phase: "idle" } : v,
-        );
-      }
-    };
-
-    recognition.start();
-  };
-
-  const micBgColor =
-    voice.phase === "listening"
-      ? "#dc2626"
-      : voice.phase === "processing" || voice.phase === "speaking"
-        ? "#d97706"
-        : "linear-gradient(135deg, #15803d, #4ade80)";
 
   return (
     <div
@@ -553,75 +423,6 @@ export default function FarmDashboard({
             </div>
           </div>
 
-          {/* Voice AI Answer Display */}
-          {(voice.phase !== "idle" || voice.answer || voice.error) && (
-            <div
-              className="mb-5 rounded-2xl p-4"
-              style={{
-                background: "rgba(0, 20, 0, 0.7)",
-                border: "1px solid rgba(74, 222, 128, 0.3)",
-              }}
-            >
-              {voice.phase === "listening" && (
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-1 items-end">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="w-1 bg-green-400 rounded-full animate-bounce"
-                        style={{
-                          height: `${8 + i * 4}px`,
-                          animationDelay: `${i * 0.1}s`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-green-300 text-sm font-bold">
-                    {t(lang, "listening")}
-                  </p>
-                </div>
-              )}
-              {voice.phase === "processing" && (
-                <div>
-                  {voice.transcript && (
-                    <p className="text-white/50 text-xs mb-2">
-                      "{voice.transcript}"
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full border-2 border-green-400 border-t-transparent animate-spin" />
-                    <p className="text-green-300 text-sm">
-                      {t(lang, "aiProcessing")}
-                    </p>
-                  </div>
-                </div>
-              )}
-              {voice.phase === "speaking" && voice.answer && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-green-400 text-xs font-bold">
-                      🤖 SENSOTECH AI
-                    </span>
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="w-1 h-3 bg-green-400 rounded-full animate-pulse"
-                          style={{ animationDelay: `${i * 0.2}s` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-white text-sm leading-relaxed">
-                    {voice.answer}
-                  </p>
-                </div>
-              )}
-              {voice.error && (
-                <p className="text-orange-400 text-sm">{voice.error}</p>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Dashboard Bottom Navigation */}
@@ -654,40 +455,18 @@ export default function FarmDashboard({
 
           {/* Voice AI Mic */}
           <button
-            onClick={startVoice}
+            onClick={onVoiceAI}
             className="flex flex-col items-center gap-1 py-1"
           >
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center relative"
               style={{
-                background:
-                  typeof micBgColor === "string" &&
-                  micBgColor.startsWith("linear")
-                    ? micBgColor
-                    : micBgColor,
-                backgroundColor:
-                  typeof micBgColor === "string" &&
-                  !micBgColor.startsWith("linear")
-                    ? micBgColor
-                    : undefined,
-                boxShadow:
-                  voice.phase !== "idle"
-                    ? `0 0 24px ${voice.phase === "listening" ? "rgba(220,38,38,0.6)" : "rgba(217,119,6,0.6)"}`
-                    : "0 0 20px rgba(74, 222, 128, 0.4)",
+                background: "linear-gradient(135deg, #15803d, #4ade80)",
+                boxShadow: "0 0 20px rgba(74, 222, 128, 0.4)",
                 transition: "all 0.3s",
               }}
             >
-              {voice.phase === "idle" ? (
-                <Mic size={26} color="white" />
-              ) : (
-                <MicOff size={26} color="white" />
-              )}
-              {voice.phase !== "idle" && (
-                <div
-                  className="absolute inset-0 rounded-full border-2 border-white/40 animate-ping"
-                  style={{ animationDuration: "1s" }}
-                />
-              )}
+              <Mic size={26} color="white" />
             </div>
             <span className="text-white/50 text-xs">{t(lang, "voiceAI")}</span>
           </button>

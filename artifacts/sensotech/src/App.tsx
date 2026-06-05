@@ -5,9 +5,10 @@ import ProfileSetup from "@/pages/ProfileSetup";
 import HomeScreen from "@/pages/HomeScreen";
 import FarmDashboard from "@/pages/FarmDashboard";
 import AIAdvisor from "@/pages/AIAdvisor";
+import VoiceAI from "@/pages/VoiceAI";
 import { type Language } from "@/lib/translations";
 
-type Step = "login" | "language" | "profile" | "home" | "dashboard" | "ai";
+type Step = "login" | "language" | "profile" | "home" | "dashboard" | "ai" | "voiceai";
 type NavTab = "home" | "chat" | "news";
 
 interface Profile {
@@ -73,12 +74,15 @@ export default function App() {
         profile={profile}
         onBack={() => setStep("home")}
         onAIAdvisor={() => setStep("ai")}
+        onVoiceAI={() => setStep("voiceai")}
         lang={lang}
       />
     );
   }
 
   if (step === "ai") return <AIAdvisor onBack={() => setStep("dashboard")} lang={lang} />;
+
+  if (step === "voiceai") return <VoiceAI onBack={() => setStep("dashboard")} lang={lang} />;
 
   return null;
 }
