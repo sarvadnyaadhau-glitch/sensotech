@@ -4,8 +4,8 @@ import { ai } from "@workspace/integrations-gemini-ai";
 const router = Router();
 
 router.post("/ask", async (req, res) => {
+  const { question, language, sensorData, farmName, cropType } = req.body;
   try {
-    const { question, language, sensorData, farmName, cropType } = req.body;
 
     if (!question || !sensorData) {
       res.status(400).json({ error: "question and sensorData are required" });
@@ -48,7 +48,7 @@ IMPORTANT RULES:
 8. When talking about fertilizer — refer to "${fertilizer}" from the sensor data.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: [
         { role: "user", parts: [{ text: question }] },
       ],
