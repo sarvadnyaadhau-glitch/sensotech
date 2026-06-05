@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Leaf, Mic, MicOff, Trash2 } from "lucide-react";
-import { t, type Language } from "@/lib/translations";
+import { Leaf, Mic, MicOff, Trash2, Send } from "lucide-react";
+import { type Language } from "@/lib/translations";
 import { useSensorData } from "@/lib/useSensorData";
 
 interface VoiceAIProps {
@@ -29,57 +29,72 @@ const UI = {
     subtitle: "Ask anything about your farm",
     startListening: "Start Listening",
     stopListening: "Stop",
-    listening: "Listening...",
-    processing: "AI is thinking...",
-    speaking: "AI is speaking...",
-    youSaid: "You said",
+    listening: "Listening… speak now",
+    processing: "AI is thinking…",
+    speaking: "AI is speaking…",
+    youSaid: "You",
     clearChat: "Clear chat",
-    noHistory: "No conversation yet.\nTap the mic and ask a farming question!",
-    sensorLive: "Live sensor data connected",
-    placeholder: "Tap mic to speak",
-    errorNoSpeech: "Could not hear you. Please try again in a quiet place.",
-    errorBrowser: "Voice not supported. Please use Chrome browser.",
-    errorAI: "AI request failed. Please check your connection.",
-    examples: ["Which crop should I grow?", "Is my soil healthy?", "Which fertilizer should I use?"],
-    examplesHi: "Try asking:",
+    noHistory: "No conversation yet.\nTap the mic or type a question!",
+    sensorLive: "Live sensor data",
+    placeholder: "Tap mic or type your question…",
+    typeHere: "Type your question…",
+    send: "Send",
+    errPermission: "Microphone blocked. Please allow mic access in your browser settings, or type your question below.",
+    errNoSpeech: "No speech heard. Please speak clearly, or type your question below.",
+    errNetwork: "Network error with voice. Please type your question below.",
+    errBrowser: "Voice not supported in this browser. Use the text box below.",
+    errAI: "AI request failed. Please check your internet connection.",
+    examples: ["Which crop should I grow?", "Is my soil healthy?", "Which fertilizer should I use?", "Why are leaves turning yellow?"],
+    examplesLabel: "Try asking:",
+    micTip: "Allow microphone → tap mic → speak your farming question",
   },
   mr: {
     title: "व्हॉइस AI सहाय्यक",
     subtitle: "तुमच्या शेताबद्दल काहीही विचारा",
     startListening: "ऐकणे सुरू करा",
     stopListening: "थांबा",
-    listening: "ऐकत आहे...",
-    processing: "AI विचार करत आहे...",
-    speaking: "AI बोलत आहे...",
-    youSaid: "तुम्ही म्हणालात",
+    listening: "ऐकत आहे… बोला",
+    processing: "AI विचार करत आहे…",
+    speaking: "AI बोलत आहे…",
+    youSaid: "तुम्ही",
     clearChat: "बातचीत साफ करा",
-    noHistory: "अजून कोणतीही संभाषण नाही.\nमाइक दाबा आणि शेतीबद्दल प्रश्न विचारा!",
-    sensorLive: "लाइव्ह सेन्सर डेटा जोडलेला आहे",
-    placeholder: "बोलण्यासाठी माइक दाबा",
-    errorNoSpeech: "तुमचा आवाज ऐकू आला नाही. शांत जागी पुन्हा प्रयत्न करा.",
-    errorBrowser: "आवाज समर्थित नाही. कृपया Chrome ब्राउझर वापरा.",
-    errorAI: "AI विनंती अयशस्वी. कृपया तुमचे इंटरनेट तपासा.",
-    examples: ["कोणते पीक घ्यावे?", "माझी माती निरोगी आहे का?", "कोणते खत वापरावे?"],
-    examplesHi: "विचारण्याचा प्रयत्न करा:",
+    noHistory: "अजून कोणतीही संभाषण नाही.\nमाइक दाबा किंवा प्रश्न टाइप करा!",
+    sensorLive: "लाइव्ह सेन्सर डेटा",
+    placeholder: "माइक दाबा किंवा प्रश्न टाइप करा…",
+    typeHere: "तुमचा प्रश्न टाइप करा…",
+    send: "पाठवा",
+    errPermission: "माइक ब्लॉक आहे. ब्राउझर सेटिंग्जमध्ये माइक परवानगी द्या, किंवा खालील बॉक्समध्ये टाइप करा.",
+    errNoSpeech: "आवाज ऐकू आला नाही. स्पष्टपणे बोला किंवा खालील बॉक्समध्ये टाइप करा.",
+    errNetwork: "व्हॉइससह नेटवर्क त्रुटी. कृपया खालील बॉक्समध्ये टाइप करा.",
+    errBrowser: "या ब्राउझरमध्ये व्हॉइस समर्थित नाही. खालील बॉक्स वापरा.",
+    errAI: "AI विनंती अयशस्वी. कृपया इंटरनेट तपासा.",
+    examples: ["कोणते पीक घ्यावे?", "माझी माती निरोगी आहे का?", "कोणते खत वापरावे?", "पाने पिवळी का पडत आहेत?"],
+    examplesLabel: "विचारण्याचा प्रयत्न करा:",
+    micTip: "माइक परवानगी द्या → माइक दाबा → शेतीबद्दल बोला",
   },
   hi: {
     title: "वॉइस AI सहायक",
     subtitle: "अपने खेत के बारे में कुछ भी पूछें",
     startListening: "सुनना शुरू करें",
     stopListening: "रोकें",
-    listening: "सुन रहा हूँ...",
-    processing: "AI सोच रहा है...",
-    speaking: "AI बोल रहा है...",
-    youSaid: "आपने कहा",
+    listening: "सुन रहा हूँ… बोलिए",
+    processing: "AI सोच रहा है…",
+    speaking: "AI बोल रहा है…",
+    youSaid: "आप",
     clearChat: "बातचीत साफ करें",
-    noHistory: "अभी कोई बातचीत नहीं।\nमाइक दबाएं और खेती के बारे में सवाल पूछें!",
-    sensorLive: "लाइव सेंसर डेटा जुड़ा है",
-    placeholder: "बोलने के लिए माइक दबाएं",
-    errorNoSpeech: "आपकी आवाज नहीं सुनाई दी। शांत जगह पर दोबारा कोशिश करें।",
-    errorBrowser: "वॉइस समर्थित नहीं है। कृपया Chrome ब्राउज़र उपयोग करें।",
-    errorAI: "AI अनुरोध विफल। कृपया अपना इंटरनेट जांचें।",
-    examples: ["कौन सी फसल लगाएं?", "मेरी मिट्टी स्वस्थ है?", "कौन सा खाद इस्तेमाल करें?"],
-    examplesHi: "पूछने की कोशिश करें:",
+    noHistory: "अभी कोई बातचीत नहीं।\nमाइक दबाएं या सवाल टाइप करें!",
+    sensorLive: "लाइव सेंसर डेटा",
+    placeholder: "माइक दबाएं या सवाल टाइप करें…",
+    typeHere: "अपना सवाल टाइप करें…",
+    send: "भेजें",
+    errPermission: "माइक ब्लॉक है। ब्राउज़र सेटिंग में माइक की अनुमति दें, या नीचे टाइप करें।",
+    errNoSpeech: "आवाज नहीं सुनाई दी। स्पष्ट बोलें या नीचे टाइप करें।",
+    errNetwork: "वॉइस के साथ नेटवर्क त्रुटि। कृपया नीचे टाइप करें।",
+    errBrowser: "इस ब्राउज़र में वॉइस समर्थित नहीं। नीचे बॉक्स उपयोग करें।",
+    errAI: "AI अनुरोध विफल। कृपया इंटरनेट जांचें।",
+    examples: ["कौन सी फसल लगाएं?", "मेरी मिट्टी स्वस्थ है?", "कौन सा खाद इस्तेमाल करें?", "पत्ते पीले क्यों हो रहे हैं?"],
+    examplesLabel: "पूछने की कोशिश करें:",
+    micTip: "माइक अनुमति दें → माइक दबाएं → खेती के बारे में बोलें",
   },
 };
 
@@ -91,9 +106,11 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState("");
   const [error, setError] = useState("");
+  const [textInput, setTextInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const ui = UI[lang];
 
   useEffect(() => {
@@ -108,10 +125,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
   }, [messages, phase]);
 
   const addMessage = (role: "user" | "ai", text: string) => {
-    setMessages((prev) => [
-      ...prev,
-      { id: ++msgCounter, role, text, timestamp: new Date() },
-    ]);
+    setMessages((prev) => [...prev, { id: ++msgCounter, role, text, timestamp: new Date() }]);
   };
 
   const stopAll = () => {
@@ -121,13 +135,55 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
     setCurrentTranscript("");
   };
 
+  const askAI = async (question: string) => {
+    addMessage("user", question);
+    setPhase("processing");
+    setError("");
+    try {
+      const baseUrl = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+      const resp = await fetch(`${baseUrl}/api/farm-ai/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          language: lang,
+          sensorData: {
+            moisture: sensorData.moisture,
+            ph: sensorData.ph,
+            nitrogen: sensorData.nitrogen,
+            phosphorus: sensorData.phosphorus,
+            potassium: sensorData.potassium,
+            crop: sensorData.crop,
+            fertilizer: sensorData.fertilizer,
+          },
+          farmName: "Mauli Farm",
+          cropType: sensorData.crop,
+        }),
+      });
+      const json = await resp.json();
+      const answer: string = json.answer || ui.errAI;
+      addMessage("ai", answer);
+      setPhase("speaking");
+
+      const utter = new SpeechSynthesisUtterance(answer);
+      utter.lang = LANG_CODE[lang];
+      utter.rate = 0.88;
+      utter.pitch = 1.05;
+      utter.onend = () => { setPhase("idle"); setCurrentTranscript(""); };
+      utter.onerror = () => { setPhase("idle"); setCurrentTranscript(""); };
+      window.speechSynthesis.speak(utter);
+    } catch {
+      setError(ui.errAI);
+      setPhase("idle");
+      setCurrentTranscript("");
+    }
+  };
+
   const startListening = () => {
     setError("");
-    const SR =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
-      setError(ui.errorBrowser);
+      setError(ui.errBrowser);
       return;
     }
 
@@ -142,52 +198,22 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
     recognition.onresult = async (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
       setCurrentTranscript(transcript);
-      addMessage("user", transcript);
-      setPhase("processing");
-
-      try {
-        const baseUrl = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-        const resp = await fetch(`${baseUrl}/api/farm-ai/ask`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: transcript,
-            language: lang,
-            sensorData: {
-              moisture: sensorData.moisture,
-              ph: sensorData.ph,
-              nitrogen: sensorData.nitrogen,
-              phosphorus: sensorData.phosphorus,
-              potassium: sensorData.potassium,
-              crop: sensorData.crop,
-              fertilizer: sensorData.fertilizer,
-            },
-            farmName: "Mauli Farm",
-            cropType: sensorData.crop,
-          }),
-        });
-        const json = await resp.json();
-        const answer: string = json.answer || ui.errorAI;
-        addMessage("ai", answer);
-        setPhase("speaking");
-
-        const utter = new SpeechSynthesisUtterance(answer);
-        utter.lang = LANG_CODE[lang];
-        utter.rate = 0.88;
-        utter.pitch = 1.05;
-        synthRef.current = utter;
-        utter.onend = () => { setPhase("idle"); setCurrentTranscript(""); };
-        utter.onerror = () => { setPhase("idle"); setCurrentTranscript(""); };
-        window.speechSynthesis.speak(utter);
-      } catch {
-        setError(ui.errorAI);
-        setPhase("idle");
-        setCurrentTranscript("");
-      }
+      await askAI(transcript);
     };
 
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-      if (e.error !== "aborted") setError(ui.errorNoSpeech);
+      if (e.error === "aborted") return;
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        setError(ui.errPermission);
+      } else if (e.error === "no-speech") {
+        setError(ui.errNoSpeech);
+      } else if (e.error === "network") {
+        setError(ui.errNetwork);
+      } else if (e.error === "audio-capture") {
+        setError(ui.errPermission);
+      } else {
+        setError(ui.errNoSpeech);
+      }
       setPhase("idle");
       setCurrentTranscript("");
     };
@@ -200,11 +226,26 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
   };
 
   const handleMicButton = () => {
-    if (phase === "idle") {
-      startListening();
-    } else {
-      stopAll();
-    }
+    if (phase === "idle") startListening();
+    else stopAll();
+  };
+
+  const handleTextSend = async () => {
+    const q = textInput.trim();
+    if (!q || isSending || phase === "processing") return;
+    setTextInput("");
+    setIsSending(true);
+    await askAI(q);
+    setIsSending(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleTextSend();
+  };
+
+  const handleExampleTap = (ex: string) => {
+    setTextInput(ex);
+    inputRef.current?.focus();
   };
 
   const phaseColor =
@@ -250,7 +291,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
             </svg>
           </button>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Leaf size={13} color="#4ade80" />
               <span className="text-white/50 text-xs font-bold tracking-widest">SENSOTECH</span>
             </div>
@@ -260,60 +301,66 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
             <button
               onClick={() => { setMessages([]); setError(""); }}
               className="w-9 h-9 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
               title={ui.clearChat}
             >
-              <Trash2 size={15} color="rgba(255,255,255,0.5)" />
+              <Trash2 size={15} color="rgba(255,255,255,0.45)" />
             </button>
           )}
         </div>
 
         {/* Live sensor strip */}
         <div
-          className="flex items-center gap-2 mx-4 mt-3 rounded-xl px-3 py-2 flex-shrink-0"
+          className="flex items-center gap-2 mx-4 mt-3 rounded-xl px-3 py-2 flex-shrink-0 flex-wrap"
           style={{ background: "rgba(0,10,0,0.8)", border: "1px solid rgba(74,222,128,0.2)" }}
         >
-          <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-white/50 text-xs">{ui.sensorLive}</span>
-          <div className="flex gap-1.5 ml-1 flex-wrap">
-            {[
-              { label: `💧${sensorData.moisture}%`, color: "#60a5fa" },
-              { label: `pH ${sensorData.ph}`, color: "#fde047" },
-              { label: `N ${sensorData.nitrogen}`, color: "#4ade80" },
-              { label: `P ${sensorData.phosphorus}`, color: "#c084fc" },
-              { label: `K ${sensorData.potassium}`, color: "#fb923c" },
-            ].map((s) => (
-              <span key={s.label} className="text-xs px-1.5 py-0.5 rounded-full"
-                style={{ background: `${s.color}18`, color: s.color, border: `1px solid ${s.color}40` }}>
-                {s.label}
-              </span>
-            ))}
-          </div>
+          <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+          <span className="text-white/45 text-xs flex-shrink-0">{ui.sensorLive}</span>
+          {[
+            { label: `💧${sensorData.moisture}%`, color: "#60a5fa" },
+            { label: `pH ${sensorData.ph}`, color: "#fde047" },
+            { label: `N ${sensorData.nitrogen}`, color: "#4ade80" },
+            { label: `P ${sensorData.phosphorus}`, color: "#c084fc" },
+            { label: `K ${sensorData.potassium}`, color: "#fb923c" },
+          ].map((s) => (
+            <span key={s.label} className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0"
+              style={{ background: `${s.color}18`, color: s.color, border: `1px solid ${s.color}38` }}>
+              {s.label}
+            </span>
+          ))}
         </div>
 
         {/* Chat history */}
-        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-3">
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-2">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[200px] gap-5 py-6">
+            <div className="flex flex-col items-center gap-4 py-4">
+              {/* Mic visual */}
               <div
-                className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)" }}
+                className="w-16 h-16 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.18)" }}
               >
-                <Mic size={32} color="rgba(74,222,128,0.6)" />
+                <Mic size={28} color="rgba(74,222,128,0.55)" />
               </div>
-              <p className="text-white/40 text-sm text-center whitespace-pre-line leading-relaxed">
+              <p className="text-white/35 text-sm text-center whitespace-pre-line leading-relaxed px-4">
                 {ui.noHistory}
               </p>
+              {/* Tip */}
+              <p className="text-white/25 text-xs text-center px-6">{ui.micTip}</p>
+              {/* Example questions */}
               <div
                 className="rounded-xl p-3 w-full"
-                style={{ background: "rgba(0,10,0,0.7)", border: "1px solid rgba(74,222,128,0.15)" }}
+                style={{ background: "rgba(0,10,0,0.7)", border: "1px solid rgba(74,222,128,0.13)" }}
               >
-                <p className="text-white/40 text-xs mb-2">{ui.examplesHi}</p>
+                <p className="text-white/35 text-xs mb-2">{ui.examplesLabel}</p>
                 {ui.examples.map((ex) => (
-                  <div key={ex} className="flex items-center gap-2 py-1">
-                    <span className="text-green-400 text-xs">→</span>
-                    <span className="text-white/60 text-xs italic">"{ex}"</span>
-                  </div>
+                  <button
+                    key={ex}
+                    onClick={() => handleExampleTap(ex)}
+                    className="flex items-center gap-2 py-1.5 w-full text-left"
+                  >
+                    <span className="text-green-400 text-xs flex-shrink-0">→</span>
+                    <span className="text-white/55 text-xs italic hover:text-white/80 transition-colors">"{ex}"</span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -334,8 +381,8 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
                       className="rounded-2xl px-4 py-3"
                       style={
                         msg.role === "user"
-                          ? { background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", borderBottomRightRadius: 4 }
-                          : { background: "rgba(0,10,0,0.88)", border: "1px solid rgba(74,222,128,0.2)", borderBottomLeftRadius: 4 }
+                          ? { background: "rgba(74,222,128,0.14)", border: "1px solid rgba(74,222,128,0.28)", borderBottomRightRadius: 4 }
+                          : { background: "rgba(0,12,0,0.9)", border: "1px solid rgba(74,222,128,0.18)", borderBottomLeftRadius: 4 }
                       }
                     >
                       {msg.role === "user" && (
@@ -346,20 +393,20 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
                       )}
                       <p className="text-white text-sm leading-relaxed">{msg.text}</p>
                     </div>
-                    <p className="text-white/25 text-xs mt-1 px-1 text-right">
-                      {formatTime(msg.timestamp)}
-                    </p>
+                    <p className="text-white/20 text-xs mt-1 px-1 text-right">{formatTime(msg.timestamp)}</p>
                   </div>
                 </div>
               ))}
 
-              {/* Typing / speaking indicator */}
+              {/* Typing indicator */}
               {phase === "processing" && (
                 <div className="flex justify-start">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center mr-2 mt-1 flex-shrink-0" style={{ background: "linear-gradient(135deg,#15803d,#4ade80)" }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center mr-2 mt-1 flex-shrink-0"
+                    style={{ background: "linear-gradient(135deg,#15803d,#4ade80)" }}>
                     <span className="text-xs">🤖</span>
                   </div>
-                  <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(0,10,0,0.88)", border: "1px solid rgba(74,222,128,0.2)", borderBottomLeftRadius: 4 }}>
+                  <div className="rounded-2xl px-4 py-3"
+                    style={{ background: "rgba(0,12,0,0.9)", border: "1px solid rgba(74,222,128,0.18)", borderBottomLeftRadius: 4 }}>
                     <div className="flex gap-1 items-center h-5">
                       {[0, 1, 2].map((i) => (
                         <div key={i} className="w-2 h-2 bg-green-400 rounded-full animate-bounce"
@@ -369,84 +416,133 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
                   </div>
                 </div>
               )}
-
               <div ref={chatEndRef} />
             </div>
           )}
         </div>
 
-        {/* Error */}
+        {/* Error banner */}
         {error && (
-          <div className="mx-4 mb-2 px-4 py-2 rounded-xl text-orange-300 text-sm flex-shrink-0"
-            style={{ background: "rgba(251,146,60,0.1)", border: "1px solid rgba(251,146,60,0.25)" }}>
-            ⚠️ {error}
+          <div className="mx-4 mb-2 px-4 py-2.5 rounded-xl flex-shrink-0 flex items-start gap-2"
+            style={{ background: "rgba(251,146,60,0.1)", border: "1px solid rgba(251,146,60,0.28)" }}>
+            <span className="flex-shrink-0 mt-0.5">⚠️</span>
+            <p className="text-orange-300 text-xs leading-relaxed">{error}</p>
           </div>
         )}
 
-        {/* Mic area */}
+        {/* Bottom: Mic + Status + Text input */}
         <div
-          className="flex-shrink-0 flex flex-col items-center gap-4 py-6 px-4"
-          style={{ borderTop: "1px solid rgba(74,222,128,0.12)", background: "rgba(0,6,0,0.9)" }}
+          className="flex-shrink-0 px-4 pt-4 pb-5"
+          style={{ borderTop: "1px solid rgba(74,222,128,0.12)", background: "rgba(0,5,0,0.92)" }}
         >
-          {/* Status label */}
-          <div className="flex items-center gap-2">
-            {phase !== "idle" && (
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: phaseColor }} />
+          {/* Mic row */}
+          <div className="flex flex-col items-center gap-2 mb-4">
+            {/* Phase label */}
+            <div className="flex items-center gap-2 h-5">
+              {phase !== "idle" && (
+                <div className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{ background: phaseColor }} />
+              )}
+              <p className="text-xs font-medium" style={{ color: phase === "idle" ? "rgba(255,255,255,0.28)" : phaseColor }}>
+                {phaseLabel}
+              </p>
+            </div>
+
+            {/* Transcript preview while listening */}
+            {phase === "listening" && currentTranscript && (
+              <p className="text-white/40 text-xs italic text-center px-4">"{currentTranscript}"</p>
             )}
-            <p className="text-sm font-medium" style={{ color: phase === "idle" ? "rgba(255,255,255,0.35)" : phaseColor }}>
-              {phaseLabel}
-            </p>
-          </div>
 
-          {/* Transcript preview */}
-          {phase !== "idle" && currentTranscript && (
-            <p className="text-white/50 text-xs italic text-center px-4">"{currentTranscript}"</p>
-          )}
+            {/* Mic button */}
+            <button
+              onClick={handleMicButton}
+              disabled={phase === "processing"}
+              className="relative w-18 h-18 rounded-full flex items-center justify-center transition-all duration-300"
+              style={{
+                width: 72,
+                height: 72,
+                background:
+                  phase === "listening" ? "#dc2626"
+                  : phase === "processing" ? "#92400e"
+                  : phase === "speaking" ? "#1e40af"
+                  : "linear-gradient(135deg,#15803d,#4ade80)",
+                boxShadow:
+                  phase === "listening" ? "0 0 28px rgba(220,38,38,0.55)"
+                  : phase === "processing" ? "0 0 20px rgba(146,64,14,0.4)"
+                  : phase === "speaking" ? "0 0 28px rgba(30,64,175,0.5)"
+                  : "0 0 20px rgba(74,222,128,0.38)",
+                opacity: phase === "processing" ? 0.7 : 1,
+              }}
+            >
+              {phase === "idle" || phase === "speaking"
+                ? <Mic size={30} color="white" />
+                : <MicOff size={30} color="white" />
+              }
+              {(phase === "listening") && (
+                <>
+                  <div className="absolute inset-0 rounded-full border-2 border-white/30 animate-ping" style={{ animationDuration: "1s" }} />
+                  <div className="absolute inset-[-10px] rounded-full border border-white/15 animate-ping" style={{ animationDuration: "1.5s", animationDelay: "0.25s" }} />
+                </>
+              )}
+            </button>
 
-          {/* Mic button */}
-          <button
-            onClick={handleMicButton}
-            className="relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300"
-            style={{
-              background:
-                phase === "listening" ? "#dc2626"
-                : phase === "processing" ? "#d97706"
-                : phase === "speaking" ? "#1d4ed8"
-                : "linear-gradient(135deg,#15803d,#4ade80)",
-              boxShadow:
-                phase === "listening" ? "0 0 32px rgba(220,38,38,0.6)"
-                : phase === "processing" ? "0 0 32px rgba(217,119,6,0.5)"
-                : phase === "speaking" ? "0 0 32px rgba(96,165,250,0.5)"
-                : "0 0 24px rgba(74,222,128,0.4)",
-            }}
-          >
-            {phase === "idle" ? <Mic size={32} color="white" /> : <MicOff size={32} color="white" />}
-            {phase !== "idle" && (
-              <>
-                <div className="absolute inset-0 rounded-full border-2 border-white/30 animate-ping" style={{ animationDuration: "1s" }} />
-                <div className="absolute inset-[-10px] rounded-full border border-white/15 animate-ping" style={{ animationDuration: "1.4s", animationDelay: "0.2s" }} />
-              </>
-            )}
-          </button>
-
-          {/* Start / Stop label buttons */}
-          <div className="flex gap-3">
+            {/* Start / Stop button */}
             <button
               onClick={phase === "idle" ? startListening : stopAll}
-              className="px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-200"
+              disabled={phase === "processing"}
+              className="px-6 py-2 rounded-full text-xs font-bold transition-all duration-200"
               style={
-                phase === "idle"
-                  ? { background: "rgba(74,222,128,0.15)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.4)" }
-                  : { background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.4)" }
+                phase === "idle" || phase === "speaking"
+                  ? { background: "rgba(74,222,128,0.13)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.38)" }
+                  : { background: "rgba(239,68,68,0.13)", color: "#f87171", border: "1px solid rgba(239,68,68,0.38)" }
               }
             >
-              {phase === "idle" ? ui.startListening : ui.stopListening}
+              {phase === "idle" || phase === "speaking" ? ui.startListening : ui.stopListening}
             </button>
           </div>
 
-          {/* Language indicator */}
-          <p className="text-white/25 text-xs">
-            {lang === "mr" ? "🗣️ मराठी" : lang === "hi" ? "🗣️ हिंदी" : "🗣️ English"} — Web Speech API
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+            <span className="text-white/25 text-xs">or type</span>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+          </div>
+
+          {/* Text input */}
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={ui.typeHere}
+              disabled={phase === "processing" || isSending}
+              className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white outline-none"
+              style={{
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(74,222,128,0.22)",
+                caretColor: "#4ade80",
+              }}
+            />
+            <button
+              onClick={handleTextSend}
+              disabled={!textInput.trim() || phase === "processing" || isSending}
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+              style={{
+                background: textInput.trim() ? "linear-gradient(135deg,#15803d,#4ade80)" : "rgba(255,255,255,0.06)",
+                opacity: !textInput.trim() || phase === "processing" ? 0.5 : 1,
+              }}
+            >
+              {isSending
+                ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                : <Send size={16} color="white" />
+              }
+            </button>
+          </div>
+
+          {/* Lang indicator */}
+          <p className="text-white/20 text-xs text-center mt-3">
+            {lang === "mr" ? "🗣️ मराठी" : lang === "hi" ? "🗣️ हिंदी" : "🗣️ English"} · Gemini AI + Web Speech
           </p>
         </div>
       </div>
