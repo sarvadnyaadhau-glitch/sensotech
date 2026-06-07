@@ -78,7 +78,18 @@ IMPORTANT RULES:
       return;
     }
 
-    res.json({ answer, confidence: "high" });
+    // Sanitize brand name and crop name — catch any AI misspellings
+    let sanitized = answer;
+    // Fix SENSOTECH variants (Sensotech, sensotech, SENSOTECH, SENSOTECH, etc.)
+    sanitized = sanitized.replace(/Sensotech/gi, "SENSOTECH");
+    // Fix Cotton translations in Hindi/Marathi
+    const cottonVariants = ["Kapas", "kapas", "कपास", "कापूस", "कपास", "कापूस", "कापस"];
+    for (const v of cottonVariants) {
+      const re = new RegExp(v, "g");
+      sanitized = sanitized.replace(re, "Cotton");
+    }
+
+    res.json({ answer: sanitized, confidence: "high" });
   } catch (error) {
     req.log.error({ error }, "Farm AI error");
     res.status(500).json({
