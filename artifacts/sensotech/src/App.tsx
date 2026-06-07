@@ -82,7 +82,7 @@ export default function App() {
 
   if (step === "ai") return <AIAdvisor onBack={() => setStep("dashboard")} lang={lang} />;
 
-  if (step === "voiceai") return <VoiceAI onBack={() => setStep("dashboard")} lang={lang} />;
+  if (step === "voiceai") return <VoiceAI onBack={() => setStep("dashboard")} />;
 
   return null;
 }

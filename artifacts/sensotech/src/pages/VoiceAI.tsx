@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Leaf, Mic, MicOff, Trash2, Send, Volume2, VolumeX } from "lucide-react";
+import {
+  Leaf, Mic, MicOff, Trash2, Send, Volume2, VolumeX, Globe2, ChevronDown,
+} from "lucide-react";
 import { type Language } from "@/lib/translations";
 import { useSensorData } from "@/lib/useSensorData";
 
 interface VoiceAIProps {
   onBack: () => void;
-  lang: Language;
 }
 
 interface ChatMessage {
@@ -17,13 +18,22 @@ interface ChatMessage {
 
 type Phase = "idle" | "listening" | "processing" | "speaking";
 
-const LANG_CODE: Record<Language, string> = {
-  en: "en-IN",
-  mr: "mr-IN",
-  hi: "hi-IN",
-};
+const LS_KEY = "ai_lang";
 
-const UI = {
+const LANG_META: { code: Language; label: string; flag: string; native: string; locale: string }[] = [
+  { code: "hi", label: "Hindi", flag: "🇮🇳", native: "हिंदी", locale: "hi-IN" },
+  { code: "en", label: "English", flag: "🇬🇧", native: "English", locale: "en-IN" },
+  { code: "mr", label: "Marathi", flag: "🇮🇳", native: "मराठी", locale: "mr-IN" },
+];
+
+const UI: Record<Language, {
+  title: string; youSaid: string; clearChat: string; noHistory: string;
+  sensorLive: string; typeHere: string; listening: string; processing: string;
+  speaking: string; errPermission: string; errNoSpeech: string; errNetwork: string;
+  errBrowser: string; errAI: string; replay: string; stopSpeech: string;
+  examplesLabel: string; greetings: string[]; pickLang: string;
+  langSaved: string; examples: string[]; changeLang: string; changeLangTitle: string;
+}> = {
   en: {
     title: "AI Farm Assistant",
     youSaid: "You",
@@ -42,6 +52,12 @@ const UI = {
     replay: "Replay answer",
     stopSpeech: "Stop speaking",
     examplesLabel: "Tap a question to ask instantly:",
+    greetings: [
+      "Hello! I am SENSOTECH AI, your smart farming assistant. How can I help you today?",
+      "Namaste! I am here to help you with your farm. Ask me about crops, soil, or fertilizers.",
+    ],
+    pickLang: "Please choose your language",
+    langSaved: "Language saved!",
     examples: [
       "What is your name?",
       "Which crop should I grow?",
@@ -49,6 +65,8 @@ const UI = {
       "Which fertilizer should I use?",
       "When should I water my farm?",
     ],
+    changeLang: "Change Language",
+    changeLangTitle: "Change Language",
   },
   mr: {
     title: "AI शेती सहाय्यक",
@@ -68,6 +86,12 @@ const UI = {
     replay: "उत्तर पुन्हा ऐका",
     stopSpeech: "थांबवा",
     examplesLabel: "थेट विचारण्यासाठी प्रश्न दाबा:",
+    greetings: [
+      "नमस्कार! मी SENSOTECH AI आहे, तुमचा शार्ड शेती सहाय्यक. मी तुमाला कसे मदत करू शकतो?",
+      "हेल्लो! मी तुमच्या शेतावर हेरवळ्यासाठी आहे. पिक, माती, खत बद्दल काहीही विचारा.",
+    ],
+    pickLang: "कृपया तुमची भाषा निवडा",
+    langSaved: "भाषा सावरली!",
     examples: [
       "तुमचे नाव काय आहे?",
       "कोणते पीक घ्यावे?",
@@ -75,6 +99,8 @@ const UI = {
       "कोणते खत वापरावे?",
       "शेतात पाणी कधी द्यावे?",
     ],
+    changeLang: "भाषा बदला",
+    changeLangTitle: "भाषा बदला",
   },
   hi: {
     title: "AI खेती सहायक",
@@ -94,26 +120,59 @@ const UI = {
     replay: "जवाब फिर सुनें",
     stopSpeech: "रोकें",
     examplesLabel: "सीधे पूछने के लिए सवाल दबाएं:",
+    greetings: [
+      "नमस्ते! मैं SENSOTECH AI हूं, आपका स्मार्ट फ़ार्मिंग सहायक। मैं आपकी कैसे मदद कर सकता हूं?",
+      "हैलो! मैं यहां आपके खेत के साथ हूं। फ़सल, मिट्टी, खाद के बारे में कुछ भी पूछें।",
+    ],
+    pickLang: "कृपया अपनी भाषा चुनें",
+    langSaved: "भाषा सहेज ली!",
     examples: [
       "आपका नाम क्या है?",
-      "कौन सी फसल लगाएं?",
+      "कौन सी फ़सल लगाएं?",
       "मेरी मिट्टी स्वस्थ है?",
       "कौन सा खाद इस्तेमाल करें?",
       "खेत में पानी कब दें?",
     ],
+    changeLang: "भाषा बदलें",
+    changeLangTitle: "भाषा बदलें",
   },
 };
 
 let msgCounter = 0;
 
-export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
+function getSavedLang(): Language | null {
+  try {
+    const v = localStorage.getItem(LS_KEY);
+    if (v === "hi" || v === "en" || v === "mr") return v;
+  } catch { /* storage may be blocked */ }
+  return null;
+}
+
+function saveLang(l: Language) {
+  try { localStorage.setItem(LS_KEY, l); } catch { /* noop */ }
+}
+
+export default function VoiceAI({ onBack }: VoiceAIProps) {
+  const [lang, setLang] = useState<Language>(() => getSavedLang() ?? "en");
+  const [showPicker, setShowPicker] = useState(() => !getSavedLang());
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
   const { data: sensorData } = useSensorData();
   const [phase, setPhase] = useState<Phase>("idle");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const saved = getSavedLang();
+    if (saved) {
+      const greeting = UI[saved].greetings[0];
+      return [{ id: ++msgCounter, role: "ai", text: greeting, timestamp: new Date() }];
+    }
+    return [];
+  });
   const [textInput, setTextInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
-  const [lastAIText, setLastAIText] = useState("");
+  const [lastAIText, setLastAIText] = useState(() => {
+    const saved = getSavedLang();
+    return saved ? UI[saved].greetings[0] : "";
+  });
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -122,7 +181,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const ui = UI[lang];
 
-  // ── Load TTS voices (they load async on first call) ──────────────────
+  // ── Load TTS voices ───────────────────────────────────────────────────
   useEffect(() => {
     const load = () => {
       voicesRef.current = window.speechSynthesis?.getVoices() ?? [];
@@ -138,78 +197,97 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
 
   // Auto-focus
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 300);
-  }, []);
+    if (!showPicker) setTimeout(() => inputRef.current?.focus(), 300);
+  }, [showPicker]);
 
   // Scroll to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, phase]);
 
-  // ── Pick best voice for language ─────────────────────────────────────
+  // ── Pick best voice ──────────────────────────────────────────────────
   const getBestVoice = useCallback((langCode: string): SpeechSynthesisVoice | null => {
     const voices = voicesRef.current;
     if (!voices.length) return null;
-    // 1. Exact match: "hi-IN"
     let v = voices.find((x) => x.lang === langCode);
     if (v) return v;
-    // 2. Prefix match: "hi"
     const prefix = langCode.split("-")[0];
     v = voices.find((x) => x.lang.toLowerCase().startsWith(prefix));
     if (v) return v;
-    // 3. Fallback to any English
     return voices.find((x) => x.lang.startsWith("en")) ?? null;
   }, []);
 
-  // ── Stop any ongoing speech ───────────────────────────────────────────
+  // ── Stop speech ────────────────────────────────────────────────────
   const stopSpeech = useCallback(() => {
     if (window.speechSynthesis?.speaking) {
       window.speechSynthesis.cancel();
     }
   }, []);
 
-  // ── Speak text ────────────────────────────────────────────────────────
-  const speakText = useCallback((text: string) => {
-    if (!window.speechSynthesis) return;
+  // ── Speak text ──────────────────────────────────────────────────────
+  const speakText = useCallback(
+    (text: string, targetLang?: Language) => {
+      if (!window.speechSynthesis) return;
+      stopSpeech();
+      const l = targetLang ?? lang;
+      const langCode = LANG_META.find((m) => m.code === l)?.locale ?? "en-IN";
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = langCode;
+      utter.rate = 0.88;
+      utter.pitch = 1.05;
+      utter.volume = 1;
+      const voice = getBestVoice(langCode);
+      if (voice) utter.voice = voice;
+      utter.onstart = () => setPhase("speaking");
+      utter.onend = () => setPhase("idle");
+      utter.onerror = (e) => {
+        if (e.error !== "interrupted" && e.error !== "canceled") {
+          console.warn("TTS error:", e.error);
+        }
+        setPhase("idle");
+      };
+      utterRef.current = utter;
+      setTimeout(() => window.speechSynthesis?.speak(utter), 50);
+    },
+    [lang, getBestVoice, stopSpeech],
+  );
 
-    // Cancel previous speech first
-    stopSpeech();
-
-    const langCode = LANG_CODE[lang];
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = langCode;
-    utter.rate = 0.88;
-    utter.pitch = 1.05;
-    utter.volume = 1;
-
-    const voice = getBestVoice(langCode);
-    if (voice) utter.voice = voice;
-
-    utter.onstart = () => setPhase("speaking");
-    utter.onend = () => setPhase("idle");
-    utter.onerror = (e) => {
-      // "interrupted" fires when we cancel intentionally — ignore
-      if (e.error !== "interrupted" && e.error !== "canceled") {
-        console.warn("TTS error:", e.error);
-      }
-      setPhase("idle");
-    };
-
-    utterRef.current = utter;
-
-    // Chrome bug: speak() sometimes silently fails if called immediately after cancel().
-    // A 50ms defer fixes it.
-    setTimeout(() => {
-      window.speechSynthesis.speak(utter);
-    }, 50);
-  }, [lang, getBestVoice, stopSpeech]);
-
-  // ── Add message ───────────────────────────────────────────────────────
+  // ── Add message ──────────────────────────────────────────────────────
   const addMessage = (role: "user" | "ai", text: string) => {
     setMessages((prev) => [...prev, { id: ++msgCounter, role, text, timestamp: new Date() }]);
   };
 
-  // ── Ask Gemini AI ─────────────────────────────────────────────────────
+  // ── Language selection handler ─────────────────────────────────────
+  const handlePickLang = (l: Language) => {
+    setLang(l);
+    saveLang(l);
+    setShowPicker(false);
+    setShowLangDropdown(false);
+    const greeting = UI[l].greetings[0];
+    setLastAIText(greeting);
+    setMessages((prev) => {
+      const msg = { id: ++msgCounter, role: "ai" as const, text: greeting, timestamp: new Date() };
+      return [msg];
+    });
+    speakText(greeting, l);
+  };
+
+  const handleChangeLang = (l: Language) => {
+    stopSpeech();
+    setLang(l);
+    saveLang(l);
+    setShowLangDropdown(false);
+    setError("");
+    const greeting = UI[l].greetings[0];
+    setLastAIText(greeting);
+    setMessages((prev) => {
+      const msg = { id: ++msgCounter, role: "ai" as const, text: greeting, timestamp: new Date() };
+      return [msg];
+    });
+    speakText(greeting, l);
+  };
+
+  // ── Ask Gemini AI ─────────────────────────────────────────────────
   const askAI = async (question: string) => {
     if (!question.trim()) return;
     addMessage("user", question);
@@ -240,7 +318,6 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
       const answer: string = json.answer || ui.errAI;
       addMessage("ai", answer);
       setLastAIText(answer);
-      // Speak the answer
       speakText(answer);
     } catch {
       setError(ui.errAI);
@@ -248,7 +325,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
     }
   };
 
-  // ── Replay last AI response ───────────────────────────────────────────
+  // ── Replay last AI response ─────────────────────────────────────────
   const handleReplay = () => {
     if (!lastAIText) return;
     if (phase === "speaking") {
@@ -259,7 +336,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
     }
   };
 
-  // ── Text send ─────────────────────────────────────────────────────────
+  // ── Text send ──────────────────────────────────────────────────────
   const handleTextSend = async () => {
     const q = textInput.trim();
     if (!q || isSending || phase === "processing") return;
@@ -274,7 +351,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
     if (e.key === "Enter") handleTextSend();
   };
 
-  // ── Example question tap ──────────────────────────────────────────────
+  // ── Example question tap ───────────────────────────────────────────
   const handleExampleTap = async (ex: string) => {
     if (phase === "processing" || isSending) return;
     setIsSending(true);
@@ -283,7 +360,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
     inputRef.current?.focus();
   };
 
-  // ── Voice recognition ─────────────────────────────────────────────────
+  // ── Voice recognition ───────────────────────────────────────────────
   const startListening = () => {
     if (phase !== "idle") {
       recognitionRef.current?.abort();
@@ -294,21 +371,19 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
     setError("");
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) { setError(ui.errBrowser); return; }
-
     const recognition: SpeechRecognition = new SR();
-    recognition.lang = LANG_CODE[lang];
+    const locale = LANG_META.find((m) => m.code === lang)?.locale ?? "en-IN";
+    recognition.lang = locale;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognitionRef.current = recognition;
     setPhase("listening");
-
     recognition.onresult = async (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
       setIsSending(true);
       await askAI(transcript);
       setIsSending(false);
     };
-
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
       if (e.error === "aborted") return;
       if (e.error === "not-allowed" || e.error === "audio-capture" || e.error === "service-not-allowed") {
@@ -320,7 +395,6 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
       }
       setPhase("idle");
     };
-
     recognition.onend = () => setPhase((p) => p === "listening" ? "idle" : p);
     recognition.start();
   };
@@ -330,32 +404,71 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
 
   const isbusy = phase === "processing" || isSending;
 
-  // Phase badge colors
   const phaseColor = {
     listening: { bg: "rgba(239,68,68,0.15)", border: "rgba(239,68,68,0.4)", dot: "#ef4444", text: "#fca5a5" },
     processing: { bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.4)", dot: "#f59e0b", text: "#fcd34d" },
-    speaking:  { bg: "rgba(96,165,250,0.15)",  border: "rgba(96,165,250,0.4)",  dot: "#60a5fa", text: "#93c5fd" },
+    speaking: { bg: "rgba(96,165,250,0.15)", border: "rgba(96,165,250,0.4)", dot: "#60a5fa", text: "#93c5fd" },
     idle: null,
   }[phase];
 
+  // ────────────────────────────────────────────────────────────────
+  // Language Picker Screen
+  // ────────────────────────────────────────────────────────────────
+  if (showPicker) {
+    return (
+      <div className="relative min-h-screen flex flex-col items-center justify-center"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1920&q=80')`,
+          backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed",
+        }}>
+        <div className="absolute inset-0" style={{ background: "rgba(0,6,0,0.84)" }} />
+        <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6">
+          <div className="flex items-center gap-2">
+            <Leaf size={18} color="#4ade80" />
+            <span className="text-white/50 text-xs font-bold tracking-widest">SENSOTECH</span>
+          </div>
+          <h1 className="text-white text-lg font-bold text-center">{ui.pickLang}</h1>
+          <div className="flex flex-col gap-3 w-full">
+            {LANG_META.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => handlePickLang(l.code)}
+                className="flex items-center gap-4 rounded-2xl px-5 py-4 text-left transition-all duration-200 active:scale-95"
+                style={{
+                  background: "rgba(74,222,128,0.08)",
+                  border: "1px solid rgba(74,222,128,0.22)",
+                }}
+              >
+                <span className="text-2xl">{l.flag}</span>
+                <div>
+                  <p className="text-white font-bold text-base">{l.native}</p>
+                  <p className="text-white/35 text-xs">{l.label}</p>
+                </div>
+                <div className="ml-auto w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)" }}>
+                  <span className="text-green-400 text-xs">→</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="relative min-h-screen flex flex-col"
+    <div className="relative min-h-screen flex flex-col"
       style={{
         backgroundImage: `url('https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1920&q=80')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-      }}
-    >
+        backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed",
+      }}>
       <div className="absolute inset-0" style={{ background: "rgba(0,6,0,0.84)" }} />
 
       <div className="relative z-10 flex flex-col min-h-screen">
 
-        {/* ── Header ─────────────────────────────────────────────────── */}
+        {/* ── Header ── */}
         <div className="flex items-center gap-3 px-4 py-4 flex-shrink-0"
           style={{ borderBottom: "1px solid rgba(74,222,128,0.13)" }}>
-
           <button onClick={onBack}
             className="w-9 h-9 rounded-full flex items-center justify-center"
             style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.28)" }}>
@@ -363,7 +476,6 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-
           <div className="flex-1">
             <div className="flex items-center gap-1.5">
               <Leaf size={12} color="#4ade80" />
@@ -383,30 +495,24 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
             </div>
           )}
 
-          {/* Replay button — visible when idle and there's a last response */}
+          {/* Replay */}
           {phase === "idle" && lastAIText && (
-            <button
-              onClick={handleReplay}
+            <button onClick={handleReplay}
               className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
               style={{ background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.28)" }}
-              title={ui.replay}
-            >
+              title={ui.replay}>
               <Volume2 size={15} color="#93c5fd" />
             </button>
           )}
-
-          {/* Stop speech button — visible while speaking */}
+          {/* Stop speech */}
           {phase === "speaking" && (
-            <button
-              onClick={() => { stopSpeech(); setPhase("idle"); }}
+            <button onClick={() => { stopSpeech(); setPhase("idle"); }}
               className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
               style={{ background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.5)" }}
-              title={ui.stopSpeech}
-            >
+              title={ui.stopSpeech}>
               <VolumeX size={15} color="#60a5fa" />
             </button>
           )}
-
           {/* Clear chat */}
           {messages.length > 0 && phase === "idle" && !lastAIText && (
             <button onClick={() => { setMessages([]); setError(""); setLastAIText(""); }}
@@ -418,7 +524,48 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
           )}
         </div>
 
-        {/* ── Sensor strip ───────────────────────────────────────────── */}
+        {/* ── Language switch bar ── */}
+        <div className="relative flex-shrink-0 mx-4 mt-2">
+          <button
+            onClick={() => setShowLangDropdown((s) => !s)}
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-all"
+            style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", color: "#4ade80" }}
+          >
+            <Globe2 size={13} />
+            <span>
+              {LANG_META.find((m) => m.code === lang)?.native}
+            </span>
+            <ChevronDown size={12} />
+          </button>
+          {showLangDropdown && (
+            <div className="absolute top-full left-0 mt-1 rounded-xl overflow-hidden z-50"
+              style={{ background: "rgba(0,10,0,0.95)", border: "1px solid rgba(74,222,128,0.2)", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
+              <div className="px-3 py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <p className="text-white/30 text-xs font-bold">{ui.changeLangTitle}</p>
+              </div>
+              {LANG_META.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => handleChangeLang(l.code)}
+                  className="flex items-center gap-3 w-full text-left px-3 py-2.5 transition-all hover:bg-white/5"
+                >
+                  <span className="text-base">{l.flag}</span>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${l.code === lang ? "text-green-400" : "text-white/80"}`}>
+                      {l.native}
+                    </p>
+                    <p className="text-white/30 text-xs">{l.label}</p>
+                  </div>
+                  {l.code === lang && (
+                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Sensor strip ── */}
         <div className="flex items-center gap-1.5 mx-4 mt-2 flex-shrink-0 flex-wrap">
           <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
           <span className="text-white/35 text-xs flex-shrink-0">{ui.sensorLive}:</span>
@@ -436,8 +583,8 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
           ))}
         </div>
 
-        {/* ── Chat area ──────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-2">
+        {/* ── Chat area ── */}
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-2" onClick={() => setShowLangDropdown(false)}>
           {messages.length === 0 ? (
             <div className="flex flex-col gap-2 pt-2">
               <p className="text-white/30 text-sm text-center pb-1">{ui.noHistory}</p>
@@ -480,10 +627,9 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
                         {msg.role === "ai" && (
                           <div className="flex items-center justify-between mb-1">
                             <p className="text-green-400 text-xs font-bold">🤖 SENSOTECH AI</p>
-                            {/* Per-message replay icon */}
                             <button
                               onClick={() => {
-                                if (phase === "speaking") { stopSpeech(); setPhase("idle"); }
+                                if (phase === "speaking" && isLastAI) { stopSpeech(); setPhase("idle"); }
                                 else { setLastAIText(msg.text); speakText(msg.text); }
                               }}
                               className="ml-2 p-1 rounded-full transition-all"
@@ -491,7 +637,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
                                 background: isLastAI && phase === "speaking" ? "rgba(96,165,250,0.2)" : "rgba(74,222,128,0.08)",
                                 border: `1px solid ${isLastAI && phase === "speaking" ? "rgba(96,165,250,0.4)" : "rgba(74,222,128,0.15)"}`,
                               }}
-                              title={phase === "speaking" ? ui.stopSpeech : ui.replay}
+                              title={isLastAI && phase === "speaking" ? ui.stopSpeech : ui.replay}
                             >
                               {isLastAI && phase === "speaking"
                                 ? <VolumeX size={11} color="#60a5fa" />
@@ -531,7 +677,7 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
           )}
         </div>
 
-        {/* ── Error strip ────────────────────────────────────────────── */}
+        {/* ── Error strip ── */}
         {error && (
           <div className="mx-4 mb-1 px-3 py-2 rounded-xl flex items-start gap-2 flex-shrink-0"
             style={{ background: "rgba(251,146,60,0.09)", border: "1px solid rgba(251,146,60,0.24)" }}>
@@ -541,10 +687,9 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
           </div>
         )}
 
-        {/* ── Input bar ──────────────────────────────────────────────── */}
+        {/* ── Input bar ── */}
         <div className="flex-shrink-0 px-4 pt-3 pb-5"
           style={{ borderTop: "1px solid rgba(74,222,128,0.1)", background: "rgba(0,4,0,0.94)" }}>
-
           <div className="flex gap-2 items-center">
             {/* Mic button */}
             <button
@@ -552,22 +697,14 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
               disabled={phase === "processing" || isSending}
               className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
               style={{
-                background:
-                  phase === "listening" ? "#dc2626"
-                  : phase === "speaking" ? "#1d4ed8"
-                  : "rgba(74,222,128,0.1)",
-                border: `1px solid ${
-                  phase === "listening" ? "rgba(220,38,38,0.6)"
-                  : phase === "speaking" ? "rgba(29,78,216,0.5)"
-                  : "rgba(74,222,128,0.28)"
-                }`,
+                background: phase === "listening" ? "#dc2626" : phase === "speaking" ? "#1d4ed8" : "rgba(74,222,128,0.1)",
+                border: `1px solid ${phase === "listening" ? "rgba(220,38,38,0.6)" : phase === "speaking" ? "rgba(29,78,216,0.5)" : "rgba(74,222,128,0.28)"}`,
                 boxShadow: phase === "listening" ? "0 0 16px rgba(220,38,38,0.4)" : "none",
                 opacity: (phase === "processing" || isSending) ? 0.45 : 1,
               }}
             >
               {phase === "listening" ? <MicOff size={18} color="white" /> : <Mic size={18} color="#4ade80" />}
             </button>
-
             {/* Text input */}
             <input
               ref={inputRef}
@@ -578,22 +715,15 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
               placeholder={ui.typeHere}
               disabled={isbusy}
               className="flex-1 rounded-xl px-4 py-3 text-sm text-white outline-none"
-              style={{
-                background: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(74,222,128,0.2)",
-                caretColor: "#4ade80",
-              }}
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(74,222,128,0.2)", caretColor: "#4ade80" }}
             />
-
             {/* Send button */}
             <button
               onClick={handleTextSend}
               disabled={!textInput.trim() || isbusy}
               className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
               style={{
-                background: textInput.trim() && !isbusy
-                  ? "linear-gradient(135deg,#15803d,#4ade80)"
-                  : "rgba(255,255,255,0.05)",
+                background: textInput.trim() && !isbusy ? "linear-gradient(135deg,#15803d,#4ade80)" : "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(74,222,128,0.2)",
                 opacity: !textInput.trim() || isbusy ? 0.4 : 1,
               }}
@@ -604,12 +734,10 @@ export default function VoiceAI({ onBack, lang }: VoiceAIProps) {
               }
             </button>
           </div>
-
           <p className="text-white/18 text-xs text-center mt-2.5">
             {lang === "mr" ? "🗣️ मराठी" : lang === "hi" ? "🗣️ हिंदी" : "🗣️ English"} · Gemini AI + Voice
           </p>
         </div>
-
       </div>
     </div>
   );

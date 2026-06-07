@@ -35,7 +35,7 @@ Current live sensor readings for ${farmName || "the farm"} (Crop: ${crop}):
 - AI Recommended Fertilizer: ${fertilizer}
 
 IMPORTANT RULES:
-1. Always respond in ${langName} language ONLY. Never mix languages.
+1. You MUST answer ONLY in ${langName} language. Do not use any other language at all. Every single word must be in ${langName}.
 2. Only answer farming-related questions (crops, soil, irrigation, fertilizers, weather, pests, harvest).
 3. Keep answers concise — 2 to 4 sentences max. Be direct and practical.
 4. Use the actual sensor data above when the question is about soil health, crops, or fertilizer.
