@@ -18,12 +18,19 @@ interface ChatMessage {
 
 type Phase = "idle" | "listening" | "processing" | "speaking";
 
+type CropFlowState =
+  | "idle"          // Normal AI conversation
+  | "recommend"     // Step 1: Just showed crop recommendations
+  | "selected"      // Step 2: Farmer selected a crop, asking for plan confirmation
+  | "askDate"       // Step 3: Farmer confirmed, asking for start date
+  | "schedule";     // Step 4: Generated full schedule
+
 const LS_KEY = "ai_lang";
 
 const LANG_META: { code: Language; label: string; flag: string; native: string; locale: string }[] = [
-  { code: "hi", label: "Hindi", flag: "🇮🇳", native: "हिंदी", locale: "hi-IN" },
-  { code: "en", label: "English", flag: "🇬🇧", native: "English", locale: "en-IN" },
-  { code: "mr", label: "Marathi", flag: "🇮🇳", native: "मराठी", locale: "mr-IN" },
+  { code: "hi", label: "Hindi", flag: "\u{1F1EE}\u{1F1F3}", native: "\u0939\u093F\u0902\u0926\u0940", locale: "hi-IN" },
+  { code: "en", label: "English", flag: "\u{1F1EC}\u{1F1E7}", native: "English", locale: "en-IN" },
+  { code: "mr", label: "Marathi", flag: "\u{1F1EE}\u{1F1F3}", native: "\u092E\u0930\u093E\u0920\u0940", locale: "mr-IN" },
 ];
 
 const UI: Record<Language, {
@@ -40,14 +47,14 @@ const UI: Record<Language, {
     clearChat: "Clear chat",
     noHistory: "Ask SENSOTECH AI anything about your farm",
     sensorLive: "Live sensors",
-    typeHere: "Type your farming question…",
-    listening: "Listening…",
-    processing: "AI thinking…",
-    speaking: "Speaking…",
-    errPermission: "Mic blocked — type your question below instead.",
-    errNoSpeech: "No speech detected — type your question below.",
-    errNetwork: "Network error with voice — type your question.",
-    errBrowser: "Voice not supported here — use the text box.",
+    typeHere: "Type your farming question\u2026",
+    listening: "Listening\u2026",
+    processing: "AI thinking\u2026",
+    speaking: "Speaking\u2026",
+    errPermission: "Mic blocked \u2014 type your question below instead.",
+    errNoSpeech: "No speech detected \u2014 type your question below.",
+    errNetwork: "Network error with voice \u2014 type your question.",
+    errBrowser: "Voice not supported here \u2014 use the text box.",
     errAI: "AI request failed. Please try again.",
     replay: "Replay answer",
     stopSpeech: "Stop speaking",
@@ -69,72 +76,72 @@ const UI: Record<Language, {
     changeLangTitle: "Change Language",
   },
   mr: {
-    title: "AI शेती सहाय्यक",
-    youSaid: "तुम्ही",
-    clearChat: "बातचीत साफ करा",
-    noHistory: "तुमच्या शेताबद्दल SENSOTECH AI ला काहीही विचारा",
-    sensorLive: "लाइव्ह सेन्सर",
-    typeHere: "शेतीबद्दल प्रश्न टाइप करा…",
-    listening: "ऐकत आहे…",
-    processing: "AI विचार करत आहे…",
-    speaking: "बोलत आहे…",
-    errPermission: "माइक ब्लॉक — खाली प्रश्न टाइप करा.",
-    errNoSpeech: "आवाज ऐकू आला नाही — खाली टाइप करा.",
-    errNetwork: "व्हॉइस नेटवर्क त्रुटी — टाइप करा.",
-    errBrowser: "व्हॉइस समर्थित नाही — टेक्स्ट बॉक्स वापरा.",
-    errAI: "AI विनंती अयशस्वी. पुन्हा प्रयत्न करा.",
-    replay: "उत्तर पुन्हा ऐका",
-    stopSpeech: "थांबवा",
-    examplesLabel: "थेट विचारण्यासाठी प्रश्न दाबा:",
+    title: "AI \u0936\u0947\u0924\u0940 \u0938\u0939\u093E\u092F\u094D\u092F\u0915",
+    youSaid: "\u0924\u0941\u092E\u094D\u0939\u0940",
+    clearChat: "\u092C\u093E\u0924\u091A\u0940\u0924 \u0938\u093E\u092B \u0915\u0930\u093E",
+    noHistory: "\u0924\u0941\u092E\u091A\u094D\u092F\u093E \u0936\u0947\u0924\u093E\u092C\u0926\u094D\u0926\u0932 SENSOTECH AI \u0932\u093E \u0915\u093E\u0939\u0940\u0939\u0940 \u0935\u093F\u091A\u093E\u0930\u093E",
+    sensorLive: "\u0932\u093E\u0907\u0935\u094D\u0939 \u0938\u0947\u0928\u094D\u0938\u0930",
+    typeHere: "\u0936\u0947\u0924\u0940\u092C\u0926\u094D\u0926\u0932 \u092A\u094D\u0930\u0936\u094D\u0928 \u091F\u093E\u0907\u092A \u0915\u0930\u093E\u2026",
+    listening: "\u0910\u0915\u0924 \u0906\u0939\u0947\u2026",
+    processing: "AI \u0935\u093F\u091A\u093E\u0930 \u0915\u0930\u0924 \u0906\u0939\u0947\u2026",
+    speaking: "\u092C\u094B\u0932\u0924 \u0906\u0939\u0947\u2026",
+    errPermission: "\u092E\u093E\u0907\u0915 \u092C\u094D\u0932\u0949\u0915 \u2014 \u0916\u093E\u0932\u0940 \u092A\u094D\u0930\u0936\u094D\u0928 \u091F\u093E\u0907\u092A \u0915\u0930\u093E.",
+    errNoSpeech: "\u0906\u0935\u093E\u091C \u0910\u0915\u0942 \u0906\u0932\u093E \u0928\u093E\u0939\u0940 \u2014 \u0916\u093E\u0932\u0940 \u091F\u093E\u0907\u092A \u0915\u0930\u093E.",
+    errNetwork: "\u0935\u094D\u0939\u0949\u0907\u0938 \u0928\u0947\u091F\u0935\u0930\u094D\u0915 \u0924\u094D\u0930\u0941\u091F\u0940 \u2014 \u091F\u093E\u0907\u092A \u0915\u0930\u093E.",
+    errBrowser: "\u0935\u094D\u0939\u0949\u0907\u0938 \u0938\u092E\u0930\u094D\u0925\u093F\u0924 \u0928\u093E\u0939\u0940 \u2014 \u091F\u0947\u0915\u094D\u0938\u094D\u091F \u092C\u0949\u0915\u094D\u0938 \u0935\u093E\u092A\u0930\u093E.",
+    errAI: "AI \u0935\u093F\u0928\u0902\u0924\u0940 \u0905\u092F\u0936\u0938\u094D\u0935\u0940. \u092A\u0941\u0928\u094D\u0939\u093E \u092A\u094D\u0930\u092F\u0924\u094D\u0928 \u0915\u0930\u093E.",
+    replay: "\u0909\u0924\u094D\u0924\u0930 \u092A\u0941\u0928\u094D\u0939\u093E \u0910\u0915\u093E",
+    stopSpeech: "\u0925\u093E\u0902\u092C\u0935\u093E",
+    examplesLabel: "\u0925\u0947\u091F \u0935\u093F\u091A\u093E\u0930\u0923\u094D\u092F\u093E\u0938\u093E\u0920\u0940 \u092A\u094D\u0930\u0936\u094D\u0928 \u0926\u093E\u092C\u093E:",
     greetings: [
-      "नमस्कार! मी SENSOTECH AI आहे, तुमचा शार्ड शेती सहाय्यक. मी तुमाला कसे मदत करू शकतो?",
-      "हेल्लो! मी तुमच्या शेतावर हेरवळ्यासाठी आहे. पिक, माती, खत बद्दल काहीही विचारा.",
+      "\u0928\u092E\u0938\u094D\u0915\u093E\u0930! \u092E\u0940 SENSOTECH AI \u0906\u0939\u0947, \u0924\u0941\u092E\u091A\u093E \u0936\u093E\u0930\u094D\u0921 \u0936\u0947\u0924\u0940 \u0938\u0939\u093E\u092F\u094D\u092F\u0915. \u092E\u0940 \u0924\u0941\u092E\u093E\u0932\u093E \u0915\u0938\u0947 \u092E\u0926\u0924 \u0915\u0930\u0942 \u0936\u0915\u0924\u094B?",
+      "\u0939\u0947\u0932\u094D\u0932\u094B! \u092E\u0940 \u0924\u0941\u092E\u091A\u094D\u092F\u093E \u0936\u0947\u0924\u093E\u0935\u0930 \u0939\u0947\u0930\u0935\u0923\u094D\u092F\u093E\u0938\u093E\u0920\u0940 \u0906\u0939\u0947. \u092A\u093F\u0915, \u092E\u093E\u0924\u0940, \u0916\u0924 \u092C\u0926\u094D\u0926\u0932 \u0915\u093E\u0939\u0940\u0939\u0940 \u0935\u093F\u091A\u093E\u0930\u093E.",
     ],
-    pickLang: "कृपया तुमची भाषा निवडा",
-    langSaved: "भाषा सावरली!",
+    pickLang: "\u0915\u0943\u092A\u092F\u093E \u0924\u0941\u092E\u091A\u0940 \u092D\u093E\u0937\u093E \u0928\u093F\u0935\u0921\u093E",
+    langSaved: "\u092D\u093E\u0937\u093E \u0938\u093E\u0935\u0930\u0932\u0940!",
     examples: [
-      "तुमचे नाव काय आहे?",
-      "कोणते पीक घ्यावे?",
-      "माझी माती निरोगी आहे का?",
-      "कोणते खत वापरावे?",
-      "शेतात पाणी कधी द्यावे?",
+      "\u0924\u0941\u092E\u091A\u0947 \u0928\u093E\u0935 \u0915\u093E\u092F \u0906\u0939\u0947?",
+      "\u0915\u094B\u0923\u0924\u0947 \u092A\u0940\u0915 \u0918\u094D\u092F\u093E\u0935\u0947?",
+      "\u092E\u093E\u091D\u0940 \u092E\u093E\u0924\u0940 \u0928\u093F\u0930\u094B\u0917\u0940 \u0906\u0939\u0947 \u0915\u093E?",
+      "\u0915\u094B\u0923\u0924\u0947 \u0916\u0924 \u0935\u093E\u092A\u0930\u093E\u0935\u0947?",
+      "\u0936\u0947\u0924\u093E\u0924 \u092A\u093E\u0923\u0940 \u0915\u0927\u0940 \u0926\u094D\u092F\u093E\u0935\u0947?",
     ],
-    changeLang: "भाषा बदला",
-    changeLangTitle: "भाषा बदला",
+    changeLang: "\u092D\u093E\u0937\u093E \u092C\u0926\u0932\u093E",
+    changeLangTitle: "\u092D\u093E\u0937\u093E \u092C\u0926\u0932\u093E",
   },
   hi: {
-    title: "AI खेती सहायक",
-    youSaid: "आप",
-    clearChat: "बातचीत साफ करें",
-    noHistory: "अपने खेत के बारे में SENSOTECH AI से कुछ भी पूछें",
-    sensorLive: "लाइव सेंसर",
-    typeHere: "खेती के बारे में सवाल टाइप करें…",
-    listening: "सुन रहा हूँ…",
-    processing: "AI सोच रहा है…",
-    speaking: "बोल रहा हूँ…",
-    errPermission: "माइक ब्लॉक — नीचे सवाल टाइप करें।",
-    errNoSpeech: "आवाज नहीं सुनाई दी — नीचे टाइप करें।",
-    errNetwork: "वॉइस नेटवर्क त्रुटि — टाइप करें।",
-    errBrowser: "वॉइस समर्थित नहीं — टेक्स्ट बॉक्स उपयोग करें।",
-    errAI: "AI अनुरोध विफल। दोबारा कोशिश करें।",
-    replay: "जवाब फिर सुनें",
-    stopSpeech: "रोकें",
-    examplesLabel: "सीधे पूछने के लिए सवाल दबाएं:",
+    title: "AI \u0916\u0947\u0924\u0940 \u0938\u0939\u093E\u092F\u0915",
+    youSaid: "\u0906\u092A",
+    clearChat: "\u092C\u093E\u0924\u091A\u0940\u0924 \u0938\u093E\u092B \u0915\u0930\u0947\u0902",
+    noHistory: "\u0905\u092A\u0928\u0947 \u0916\u0947\u0924 \u0915\u0947 \u092C\u093E\u0930\u0947 \u092E\u0947\u0902 SENSOTECH AI \u0938\u0947 \u0915\u0941\u091B \u092D\u0940 \u092A\u0942\u091B\u0947\u0902",
+    sensorLive: "\u0932\u093E\u0907\u0935 \u0938\u0947\u0902\u0938\u0930",
+    typeHere: "\u0916\u0947\u0924\u0940 \u0915\u0947 \u092C\u093E\u0930\u0947 \u092E\u0947\u0902 \u0938\u0935\u093E\u0932 \u091F\u093E\u0907\u092A \u0915\u0930\u0947\u0902\u2026",
+    listening: "\u0938\u0941\u0928 \u0930\u0939\u093E \u0939\u0942\u0901\u2026",
+    processing: "AI \u0938\u094B\u091A \u0930\u0939\u093E \u0939\u0948\u2026",
+    speaking: "\u092C\u094B\u0932 \u0930\u0939\u093E \u0939\u0942\u0901\u2026",
+    errPermission: "\u092E\u093E\u0907\u0915 \u092C\u094D\u0932\u0949\u0915 \u2014 \u0928\u0940\u091A\u0947 \u0938\u0935\u093E\u0932 \u091F\u093E\u0907\u092A \u0915\u0930\u0947\u0902\u0964",
+    errNoSpeech: "\u0906\u0935\u093E\u091C \u0928\u0939\u0940\u0902 \u0938\u0941\u0928\u093E\u0908 \u0926\u0940 \u2014 \u0928\u0940\u091A\u0947 \u091F\u093E\u0907\u092A \u0915\u0930\u0947\u0902\u0964",
+    errNetwork: "\u0935\u0949\u0907\u0938 \u0928\u0947\u091F\u0935\u0930\u094D\u0915 \u0924\u094D\u0930\u0941\u091F\u093F \u2014 \u091F\u093E\u0907\u092A \u0915\u0930\u0947\u0902\u0964",
+    errBrowser: "\u0935\u0949\u0907\u0938 \u0938\u092E\u0930\u094D\u0925\u093F\u0924 \u0928\u0939\u0940\u0902 \u2014 \u091F\u0947\u0915\u094D\u0938\u094D\u091F \u092C\u0949\u0915\u094D\u0938 \u0909\u092A\u092F\u094B\u0917 \u0915\u0930\u0947\u0902\u0964",
+    errAI: "AI \u0905\u0928\u0941\u0930\u094B\u0927 \u0935\u093F\u092B\u0932\u0964 \u0926\u094B\u092C\u093E\u0930\u093E \u0915\u094B\u0936\u093F\u0936 \u0915\u0930\u0947\u0902\u0964",
+    replay: "\u091C\u0935\u093E\u092C \u092B\u093F\u0930 \u0938\u0941\u0928\u0947\u0902",
+    stopSpeech: "\u0930\u094B\u0915\u0947\u0902",
+    examplesLabel: "\u0938\u0940\u0927\u0947 \u092A\u0942\u091B\u0928\u0947 \u0915\u0947 \u0932\u093F\u090F \u0938\u0935\u093E\u0932 \u0926\u092C\u093E\u090F\u0902:",
     greetings: [
-      "नमस्ते! मैं SENSOTECH AI हूं, आपका स्मार्ट फ़ार्मिंग सहायक। मैं आपकी कैसे मदद कर सकता हूं?",
-      "हैलो! मैं यहां आपके खेत के साथ हूं। फ़सल, मिट्टी, खाद के बारे में कुछ भी पूछें।",
+      "\u0928\u092E\u0938\u094D\u0924\u0947! \u092E\u0948\u0902 SENSOTECH AI \u0939\u0942\u0902, \u0906\u092A\u0915\u093E \u0938\u094D\u092E\u093E\u0930\u094D\u091F \u092B\u093C\u093E\u0930\u094D\u092E\u093F\u0902\u0917 \u0938\u0939\u093E\u092F\u0915\u0964 \u092E\u0948\u0902 \u0906\u092A\u0915\u0940 \u0915\u0948\u0938\u0947 \u092E\u0926\u0926 \u0915\u0930 \u0938\u0915\u0924\u093E \u0939\u0942\u0902?",
+      "\u0939\u0948\u0932\u094B! \u092E\u0948\u0902 \u092F\u0939\u093E\u0902 \u0906\u092A\u0915\u0947 \u0916\u0947\u0924 \u0915\u0947 \u0938\u093E\u0925 \u0939\u0942\u0902\u0964 \u092B\u093C\u0938\u0932, \u092E\u093F\u091F\u094D\u091F\u0940, \u0916\u093E\u0926 \u0915\u0947 \u092C\u093E\u0930\u0947 \u092E\u0947\u0902 \u0915\u0941\u091B \u092D\u0940 \u092A\u0942\u091B\u0947\u0902\u0964",
     ],
-    pickLang: "कृपया अपनी भाषा चुनें",
-    langSaved: "भाषा सहेज ली!",
+    pickLang: "\u0915\u0943\u092A\u092F\u093E \u0905\u092A\u0928\u0940 \u092D\u093E\u0937\u093E \u091A\u0941\u0928\u0947\u0902",
+    langSaved: "\u092D\u093E\u0937\u093E \u0938\u0939\u0947\u091C \u0932\u0940!",
     examples: [
-      "आपका नाम क्या है?",
-      "कौन सी फ़सल लगाएं?",
-      "मेरी मिट्टी स्वस्थ है?",
-      "कौन सा खाद इस्तेमाल करें?",
-      "खेत में पानी कब दें?",
+      "\u0906\u092A\u0915\u093E \u0928\u093E\u092E \u0915\u094D\u092F\u093E \u0939\u0948?",
+      "\u0915\u094C\u0928 \u0938\u0940 \u092B\u093C\u0938\u0932 \u0932\u0917\u093E\u090F\u0902?",
+      "\u092E\u0947\u0930\u0940 \u092E\u093F\u091F\u094D\u091F\u0940 \u0938\u094D\u0935\u0938\u094D\u0925 \u0939\u0948?",
+      "\u0915\u094C\u0928 \u0938\u093E \u0916\u093E\u0926 \u0907\u0938\u094D\u0924\u0947\u092E\u093E\u0932 \u0915\u0930\u0947\u0902?",
+      "\u0916\u0947\u0924 \u092E\u0947\u0902 \u092A\u093E\u0928\u0940 \u0915\u092C \u0926\u0947\u0902?",
     ],
-    changeLang: "भाषा बदलें",
-    changeLangTitle: "भाषा बदलें",
+    changeLang: "\u092D\u093E\u0937\u093E \u092C\u0926\u0932\u0947\u0902",
+    changeLangTitle: "\u092D\u093E\u0937\u093E \u092C\u0926\u0932\u0947\u0902",
   },
 };
 
@@ -151,6 +158,92 @@ function getSavedLang(): Language | null {
 function saveLang(l: Language) {
   try { localStorage.setItem(LS_KEY, l); } catch { /* noop */ }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
+/*  INTENT DETECTION HELPERS                                                    */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+function isCropRecommendIntent(q: string): boolean {
+  const lower = q.toLowerCase();
+  const patterns = [
+    "which crop", "konsi fasal", "konsi phasl", "konsi piik", "konsi pik",
+    "konsa crop", "kaun sa crop", "kaun si fasal", "kaun sa beej", "konsi beej",
+    "suggest crop", "recommend crop", "best crop", "suitable crop",
+    "which crop to", "what crop to", "ko\u1e47te p\u012bk", "ko\u1e47te pik",
+    "kounsi fasal", "koun sa crop", "konsi fasal", "konsi fasl",
+    "ko\u1e47ate p\u012bk", "konate pik",
+  ];
+  return patterns.some((p) => lower.includes(p));
+}
+
+function isYes(q: string): boolean {
+  const t = q.trim().toLowerCase();
+  const yesWords = [
+    "yes", "haan", "ha", "h", "y", "hooo", "hoo", "han", "hnn", "haa", "ho", "hn",
+    "\u0939\u093E\u0901", "\u0939\u093E\u0902", "\u0939\u094B", "\u0939\u093E\u0902", "\u0939\u093E\u0902",
+  ];
+  return yesWords.includes(t);
+}
+
+function isNo(q: string): boolean {
+  const t = q.trim().toLowerCase();
+  const noWords = [
+    "no", "nahi", "na", "n", "nhi", "naa", "nah", "nahe", "naheen", "nahin", "nahii",
+    "\u0928\u0939\u0940\u0902", "\u0928\u0939\u0940", "\u0928\u093E", "\u0928\u093E\u0939\u0940", "\u0928\u093E\u0939\u0940",
+  ];
+  return noWords.includes(t);
+}
+
+function extractCropName(q: string, knownCrops: string[]): string | null {
+  const lower = q.trim().toLowerCase();
+  for (const c of knownCrops) {
+    if (lower.includes(c.toLowerCase())) return c;
+  }
+  const aliases: Record<string, string[]> = {
+    Cotton: ["kapas", "kapas", "kapas", "kapas"],
+    Pomegranate: ["anaar", "anaar", "dalimb", "dalimb"],
+    Soybean: ["soya", "soyabean", "soyabean", "soyabean"],
+    Wheat: ["gehu", "gehu", "gehun", "gehun"],
+    "Bengal Gram": ["chana", "chana", "chana", "harbara", "harbara"],
+    Rice: ["dhan", "dhan", "dhan", "dhan"],
+    Maize: ["makka", "makka", "makka", "makka"],
+    Turmeric: ["haldi", "haldi", "halad", "halad"],
+    Onion: ["pyaaz", "pyaaz", "pyaaz", "kanda", "kanda"],
+    Tomato: ["tamatar", "tamatar", "tamatar", "tomato", "tomato"],
+    Lemon: ["nimbu", "nimbu", "nimbu", "limbu", "limbu"],
+    Groundnut: ["moongfali", "moongfali", "moongfali", "shengdana", "shengdana"],
+    Jowar: ["jowar", "jowar", "jowar", "jowar"],
+    Bajra: ["bajra", "bajra", "bajra", "bajra"],
+  };
+  for (const [crop, names] of Object.entries(aliases)) {
+    for (const n of names) {
+      if (lower.includes(n)) return crop;
+    }
+  }
+  return null;
+}
+
+function looksLikeDate(q: string): boolean {
+  const t = q.trim().toLowerCase();
+  const months = [
+    "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+    "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
+    "\u091C\u0928", "\u092B\u093C\u0930", "\u092E\u093E\u0930\u094D\u091A", "\u0905\u092A\u094D\u0930\u0948", "\u092E\u0908", "\u091C\u0942\u0928", "\u091C\u0941\u0932", "\u0905\u0917", "\u0938\u093F\u0924\u0902", "\u0905\u0915\u094D\u091F\u0942", "\u0928\u0935\u0902", "\u0926\u093F\u0938\u0902",
+    "\u091C\u093E\u0928", "\u092B\u0947\u092C", "\u092E\u093E\u0930\u094D\u091A", "\u090F\u092A\u094D\u0930\u093F", "\u092E\u0947", "\u091C\u0942\u0928", "\u091C\u0941\u0932\u0948", "\u0910\u0917", "\u0938\u0947\u092A\u094D\u091F\u0940", "\u0913\u0915\u094D\u091F\u094B", "\u0928\u094B\u0935\u094D\u0939\u0940", "\u0921\u093F\u0938\u0947",
+  ];
+  const hasMonth = months.some((m) => t.includes(m));
+  const hasNumber = /\d/.test(t);
+  const hasSlash = /\d{1,2}\/\d{1,2}\/\d{2,4}/.test(t);
+  const hasDash = /\d{1,2}-\d{1,2}-\d{2,4}/.test(t);
+  const hasToday = t.includes("today") || t.includes("tomorrow") || t.includes("next week")
+    || t.includes("\u0906\u091C") || t.includes("\u0915\u0932") || t.includes("\u0909\u0926\u094D\u092F\u093E")
+    || t.includes("\u0906\u0939\u093F\u093E\u0932") || t.includes("\u0906\u0924\u093E");
+  return hasMonth || hasNumber || hasSlash || hasDash || hasToday;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
+/*  VOICEAI COMPONENT                                                           */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
 
 export default function VoiceAI({ onBack }: VoiceAIProps) {
   const [lang, setLang] = useState<Language>(() => getSavedLang() ?? "en");
@@ -173,6 +266,11 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
     const saved = getSavedLang();
     return saved ? UI[saved].greetings[0] : "";
   });
+
+  // Crop planning conversation state
+  const [cropFlow, setCropFlow] = useState<CropFlowState>("idle");
+  const [recommendedCrops, setRecommendedCrops] = useState<string[]>([]);
+  const [selectedCrop, setSelectedCrop] = useState<string>("");
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -287,35 +385,155 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
     speakText(greeting, l);
   };
 
-  // ── Ask Gemini AI ─────────────────────────────────────────────────
+  // ── API helpers ────────────────────────────────────────────────────
+  const baseUrl = () => import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+
+  const callRecommend = async () => {
+    const resp = await fetch(`${baseUrl()}/api/crop-plan/recommend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sensorData, language: lang }),
+    });
+    const json = await resp.json();
+    setRecommendedCrops(json.crops || []);
+    return json.answer || ui.errAI;
+  };
+
+  const callConfirm = async (crop: string) => {
+    const resp = await fetch(`${baseUrl()}/api/crop-plan/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ crop, language: lang }),
+    });
+    const json = await resp.json();
+    return json.answer || ui.errAI;
+  };
+
+  const callAskDate = async (crop: string) => {
+    const resp = await fetch(`${baseUrl()}/api/crop-plan/ask-date`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ crop, language: lang }),
+    });
+    const json = await resp.json();
+    return json.answer || ui.errAI;
+  };
+
+  const callSchedule = async (crop: string, startDate: string) => {
+    const resp = await fetch(`${baseUrl()}/api/crop-plan/schedule`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ crop, startDate, language: lang }),
+    });
+    const json = await resp.json();
+    return json.answer || ui.errAI;
+  };
+
+  const callGeneralAI = async (question: string) => {
+    const resp = await fetch(`${baseUrl()}/api/farm-ai/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        language: lang,
+        sensorData: {
+          moisture: sensorData.moisture,
+          ph: sensorData.ph,
+          nitrogen: sensorData.nitrogen,
+          phosphorus: sensorData.phosphorus,
+          potassium: sensorData.potassium,
+          crop: sensorData.crop,
+          fertilizer: sensorData.fertilizer,
+        },
+        farmName: "Mauli Farm",
+        cropType: sensorData.crop,
+      }),
+    });
+    const json = await resp.json();
+    return json.answer || ui.errAI;
+  };
+
+  // ── Main ask handler with crop planning flow ───────────────────────
   const askAI = async (question: string) => {
     if (!question.trim()) return;
     addMessage("user", question);
     setPhase("processing");
     setError("");
     try {
-      const baseUrl = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-      const resp = await fetch(`${baseUrl}/api/farm-ai/ask`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question,
-          language: lang,
-          sensorData: {
-            moisture: sensorData.moisture,
-            ph: sensorData.ph,
-            nitrogen: sensorData.nitrogen,
-            phosphorus: sensorData.phosphorus,
-            potassium: sensorData.potassium,
-            crop: sensorData.crop,
-            fertilizer: sensorData.fertilizer,
-          },
-          farmName: "Mauli Farm",
-          cropType: sensorData.crop,
-        }),
-      });
-      const json = await resp.json();
-      const answer: string = json.answer || ui.errAI;
+      let answer: string;
+
+      // ── Crop Planning Flow State Machine ──
+      if (cropFlow === "idle") {
+        // Step 1: Detect recommendation intent
+        if (isCropRecommendIntent(question)) {
+          answer = await callRecommend();
+          setCropFlow("recommend");
+        } else {
+          answer = await callGeneralAI(question);
+        }
+      } else if (cropFlow === "recommend") {
+        // Step 2: Farmer may have selected a crop or said yes
+        const crop = extractCropName(question, recommendedCrops);
+        if (crop) {
+          setSelectedCrop(crop);
+          answer = await callConfirm(crop);
+          setCropFlow("selected");
+        } else if (isYes(question)) {
+          // Yes without crop selection - ask which crop
+          if (lang === "hi") {
+            answer = "\u0915\u0943\u092A\u092F\u093E \u092A\u0939\u0932\u0947 \u092B\u093C\u0938\u0932 \u0915\u093E \u0928\u093E\u092E \u092C\u0924\u093E\u090F\u0902 \u091C\u093F\u0938\u0915\u0947 \u0932\u093F\u090F \u0915\u094D\u0937\u0947\u0924\u0940 \u092F\u094B\u091C\u0928\u093E \u091A\u093E\u0939\u093F\u090F\u0964";
+          } else if (lang === "mr") {
+            answer = "\u0915\u0943\u092A\u092F\u093E \u0927\u093E\u0932\u0940 \u092A\u093F\u0915\u093E\u091A\u0947 \u0928\u093E\u0935 \u0938\u093E\u0902\u0917\u093E \u091C\u094D\u092F\u093E\u091A\u0940 \u0936\u0947\u0924\u0940 \u092F\u094B\u091C\u0928\u093E \u0939\u0935\u0940 \u0906\u0939\u0947.";
+          } else {
+            answer = "\u{1F33E} Please tell me which crop you want the plan for.";
+          }
+        } else {
+          // Fallback: treat as general question
+          answer = await callGeneralAI(question);
+          setCropFlow("idle");
+        }
+      } else if (cropFlow === "selected") {
+        // Step 3: Farmer confirmed yes/no for plan
+        if (isYes(question)) {
+          answer = await callAskDate(selectedCrop);
+          setCropFlow("askDate");
+        } else if (isNo(question)) {
+          if (lang === "hi") {
+            answer = "\u0920\u0940\u0915 \u0939\u0948\u0964 \u0905\u0917\u0930 \u0906\u092A\u0915\u094B \u0915\u092D\u0940 \u092D\u0940 \u0916\u0947\u0924\u0940 \u092F\u094B\u091C\u0928\u093E \u091A\u093E\u0939\u093F\u090F \u0924\u094B \u0915\u0943\u092A\u092F\u093E \u092E\u0941\u091D\u0947 \u092C\u0924\u093E\u090F\u0902\u0964";
+          } else if (lang === "mr") {
+            answer = "\u091B\u093E\u0928 \u0906\u0939\u0947. \u0906\u0935\u0921\u0932\u094D\u092F\u093E\u0938 \u0936\u0947\u0924\u0940 \u092F\u094B\u091C\u0928\u093E \u0939\u0935\u0940 \u0932\u093E\u0917\u0932\u093E\u0938 \u0924\u0930\u0940 \u0915\u093E\u0916\u093E.";
+          } else {
+            answer = "\u270C\uFE0F No problem! Let me know anytime if you want a cultivation plan.";
+          }
+          setCropFlow("idle");
+        } else {
+          // Fallback: treat as general question
+          answer = await callGeneralAI(question);
+          setCropFlow("idle");
+        }
+      } else if (cropFlow === "askDate") {
+        // Step 4: Farmer provided date
+        if (looksLikeDate(question)) {
+          answer = await callSchedule(selectedCrop, question);
+          setCropFlow("schedule");
+        } else {
+          // Ask again for date
+          if (lang === "hi") {
+            answer = "\u0915\u0943\u092A\u092F\u093E \u0938\u0939\u0940 \u0924\u093E\u0930\u0940\u0916 \u092C\u0924\u093E\u090F\u0902 \u0909\u0926\u093E\u0939\u0930\u0923: \u201C15 \u091C\u0928\u0935\u0930\u0940 2026\u201D";
+          } else if (lang === "mr") {
+            answer = "\u0915\u0943\u092A\u092F\u093E \u092F\u094B\u0917\u094D\u092F \u0924\u093E\u0930\u0940\u0916 \u0938\u093E\u0902\u0917\u093E \u0909\u0926\u093E\u0939\u0930\u0923: \u201C15 \u091C\u093E\u0928\u0947\u0935\u093E\u0930\u0940 2026\u201D";
+          } else {
+            answer = "\u{1F4C5} Please provide a valid date. Example: \u201C15 January 2026\u201D";
+          }
+        }
+      } else if (cropFlow === "schedule") {
+        // Step 5: After schedule, reset to idle for general questions
+        answer = await callGeneralAI(question);
+        setCropFlow("idle");
+      } else {
+        answer = await callGeneralAI(question);
+      }
+
       addMessage("ai", answer);
       setLastAIText(answer);
       speakText(answer);
@@ -446,7 +664,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
                 </div>
                 <div className="ml-auto w-6 h-6 rounded-full flex items-center justify-center"
                   style={{ background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)" }}>
-                  <span className="text-green-400 text-xs">→</span>
+                  <span className="text-green-400 text-xs">\u2192</span>
                 </div>
               </button>
             ))}
@@ -515,7 +733,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
           )}
           {/* Clear chat */}
           {messages.length > 0 && phase === "idle" && !lastAIText && (
-            <button onClick={() => { setMessages([]); setError(""); setLastAIText(""); }}
+            <button onClick={() => { setMessages([]); setError(""); setLastAIText(""); setCropFlow("idle"); }}
               className="w-9 h-9 rounded-full flex items-center justify-center"
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
               title={ui.clearChat}>
@@ -570,7 +788,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
           <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
           <span className="text-white/35 text-xs flex-shrink-0">{ui.sensorLive}:</span>
           {[
-            { label: `💧 ${sensorData.moisture}%`, c: "#60a5fa" },
+            { label: `\u{1F4A7} ${sensorData.moisture}%`, c: "#60a5fa" },
             { label: `pH ${sensorData.ph}`, c: "#fde047" },
             { label: `N ${sensorData.nitrogen}`, c: "#4ade80" },
             { label: `P ${sensorData.phosphorus}`, c: "#c084fc" },
@@ -595,7 +813,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
                     className="text-left rounded-xl px-4 py-3 transition-all duration-150 active:scale-95"
                     style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.18)" }}>
                     <div className="flex items-center gap-3">
-                      <span className="text-green-400 text-sm flex-shrink-0">→</span>
+                      <span className="text-green-400 text-sm flex-shrink-0">\u2192</span>
                       <span className="text-white/70 text-sm">{ex}</span>
                     </div>
                   </button>
@@ -611,7 +829,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
                     {msg.role === "ai" && (
                       <div className="w-7 h-7 rounded-full flex items-center justify-center mr-2 mt-1 flex-shrink-0"
                         style={{ background: "linear-gradient(135deg,#15803d,#4ade80)" }}>
-                        <span className="text-xs">🤖</span>
+                        <span className="text-xs">\u{1F916}</span>
                       </div>
                     )}
                     <div style={{ maxWidth: "82%" }}>
@@ -626,7 +844,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
                         )}
                         {msg.role === "ai" && (
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-green-400 text-xs font-bold">🤖 SENSOTECH AI</p>
+                            <p className="text-green-400 text-xs font-bold">\u{1F916} SENSOTECH AI</p>
                             <button
                               onClick={() => {
                                 if (phase === "speaking" && isLastAI) { stopSpeech(); setPhase("idle"); }
@@ -646,7 +864,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
                             </button>
                           </div>
                         )}
-                        <p className="text-white text-sm leading-relaxed">{msg.text}</p>
+                        <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                       </div>
                       <p className="text-white/18 text-xs mt-0.5 px-1 text-right">{formatTime(msg.timestamp)}</p>
                     </div>
@@ -659,7 +877,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
                 <div className="flex justify-start">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center mr-2 mt-1 flex-shrink-0"
                     style={{ background: "linear-gradient(135deg,#15803d,#4ade80)" }}>
-                    <span className="text-xs">🤖</span>
+                    <span className="text-xs">\u{1F916}</span>
                   </div>
                   <div className="rounded-2xl px-4 py-3"
                     style={{ background: "rgba(0,12,0,0.92)", border: "1px solid rgba(74,222,128,0.16)", borderBottomLeftRadius: 4 }}>
@@ -681,9 +899,9 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
         {error && (
           <div className="mx-4 mb-1 px-3 py-2 rounded-xl flex items-start gap-2 flex-shrink-0"
             style={{ background: "rgba(251,146,60,0.09)", border: "1px solid rgba(251,146,60,0.24)" }}>
-            <span className="text-base flex-shrink-0">⚠️</span>
+            <span className="text-base flex-shrink-0">\u26A0\uFE0F</span>
             <p className="text-orange-300 text-xs leading-relaxed flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-orange-300/50 text-xs flex-shrink-0">✕</button>
+            <button onClick={() => setError("")} className="text-orange-300/50 text-xs flex-shrink-0">\u2715</button>
           </div>
         )}
 
@@ -735,7 +953,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
             </button>
           </div>
           <p className="text-white/18 text-xs text-center mt-2.5">
-            {lang === "mr" ? "🗣️ मराठी" : lang === "hi" ? "🗣️ हिंदी" : "🗣️ English"} · Gemini AI + Voice
+            {lang === "mr" ? "\u{1F5E3} \u092E\u0930\u093E\u0920\u0940" : lang === "hi" ? "\u{1F5E3} \u0939\u093F\u0902\u0926\u0940" : "\u{1F5E3} English"} \u00B7 Gemini AI + Voice
           </p>
         </div>
       </div>
