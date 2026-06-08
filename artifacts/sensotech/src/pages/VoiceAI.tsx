@@ -822,7 +822,7 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-solid rgba(74,222,128,0.16)", borderB              {messages.map((msg, idx) => {
+              {messages.map((msg, idx) => {
                 const isLastAI = msg.role === "ai" && idx === messages.length - 1;
                 return (
                   <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -837,7 +837,7 @@ solid rgba(74,222,128,0.16)", borderB              {messages.map((msg, idx) => {
                         style={
                           msg.role === "user"
                             ? { background: "rgba(74,222,128,0.13)", border: "1px solid rgba(74,222,128,0.26)", borderBottomRightRadius: 4 }
-                            : { background: "rgba(0,12,0,0.92)", border: "1px ottomLeftRadius: 4 }
+                            : { background: "rgba(0,12,0,0.92)", border: "1px solid rgba(74,222,128,0.16)", borderBottomLeftRadius: 4 }
                         }>
                         {msg.role === "user" && (
                           <p className="text-green-300/70 text-xs font-semibold mb-0.5">{ui.youSaid}</p>
