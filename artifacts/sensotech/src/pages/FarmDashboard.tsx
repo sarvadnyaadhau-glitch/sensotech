@@ -29,7 +29,8 @@ function CircleProgress({
 }) {
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
-  const pct = Math.min(value / max, 1);
+  const safeValue = Number(value) || 0;
+  const pct = Math.max(0, Math.min(safeValue / max, 1));
   const filled = pct * circumference;
   const gap = circumference - filled;
 
@@ -61,7 +62,7 @@ function CircleProgress({
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl">{icon}</span>
           <span className="text-white font-black text-lg leading-none mt-0.5">
-            {value}
+            {safeValue}
           </span>
           <span className="text-white/50 text-xs">{unit}</span>
         </div>
@@ -81,7 +82,6 @@ interface WeatherDay {
   cond: string;
   isToday: boolean;
 }
-
 
 function wmoToWeather(code: number): { icon: string; cond: string } {
   if (code === 0) return { icon: "☀️", cond: "Sunny" };
@@ -116,22 +116,24 @@ async function fetchAkolaWeather(): Promise<WeatherDay[]> {
   if (cached && cached.date === today) return cached.days;
 
   const res = await fetch(
-    "https://api.open-meteo.com/v1/forecast?latitude=20.7002&longitude=77.0082&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FKolkata&forecast_days=5"
+    "https://api.open-meteo.com/v1/forecast?latitude=20.7002&longitude=77.0082&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FKolkata&forecast_days=5",
   );
   if (!res.ok) throw new Error("Weather fetch failed");
   const data = await res.json();
 
   // API uses weather_code (new) or weathercode (old) — handle both
-  const weatherCodes: number[] = data.daily.weather_code ?? data.daily.weathercode ?? [];
+  const weatherCodes: number[] =
+    data.daily.weather_code ?? data.daily.weathercode ?? [];
 
   const days: WeatherDay[] = (data.daily.time as string[]).map((dateStr, i) => {
     const date = new Date(dateStr);
     const { icon, cond } = wmoToWeather(weatherCodes[i] ?? 0);
-    const dayLabel = i === 0
-      ? "Today"
-      : i === 1
-      ? "Tmrw"
-      : date.toLocaleDateString("en-US", { weekday: "short" });
+    const dayLabel =
+      i === 0
+        ? "Today"
+        : i === 1
+          ? "Tmrw"
+          : date.toLocaleDateString("en-US", { weekday: "short" });
     return {
       dayKey: dayLabel,
       icon,
@@ -144,7 +146,9 @@ async function fetchAkolaWeather(): Promise<WeatherDay[]> {
 
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today, days }));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   return days;
 }
@@ -167,7 +171,10 @@ export default function FarmDashboard({
     async function load() {
       try {
         const days = await fetchAkolaWeather();
-        if (!cancelled) { setWeatherDays(days); setWeatherLoading(false); }
+        if (!cancelled) {
+          setWeatherDays(days);
+          setWeatherLoading(false);
+        }
       } catch {
         if (!cancelled) setWeatherLoading(false);
       }
@@ -177,19 +184,130 @@ export default function FarmDashboard({
     // Refresh at midnight so the rolling window advances automatically
     const now = new Date();
     const msUntilMidnight =
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime();
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() -
+      now.getTime();
     const midnightTimer = setTimeout(() => {
       localStorage.removeItem(CACHE_KEY);
       load();
     }, msUntilMidnight);
 
-    return () => { cancelled = true; clearTimeout(midnightTimer); };
+    return () => {
+      cancelled = true;
+      clearTimeout(midnightTimer);
+    };
   }, []);
-  const [connectingExpert, setConnectingExpert] = useState(false);
+  const speak = (text: string) => {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang === "hi" ? "hi-IN" : lang === "mr" ? "mr-IN" : "en-IN";
+    window.speechSynthesis.speak(utter);
+  };
+  const startListening = () => {
+    alert("Mic clicked");
+    const SR =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+    console.log("SR =", SR);
+    if (!SR) {
+      alert("Speech Recognition not supported");
+      return;
+    }
 
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.lang =
+      lang === "hi" ? "hi-IN" : lang === "mr" ? "mr-IN" : "en-IN";
+
+    recognition.onresult = async (event: any) => {
+      const question = event.results[0][0].transcript;
+      if (!callLanguage) {
+        const q = question.toLowerCase();
+
+        if (q.includes("hindi")) {
+          setCallLanguage("hi");
+          speak("ठीक है, अब मैं हिंदी में बात करूंगी। आपका प्रश्न क्या है?");
+          return;
+        }
+
+        if (q.includes("marathi")) {
+          setCallLanguage("mr");
+          speak("ठीक आहे, आता मी मराठीत बोलेन. तुमचा प्रश्न काय आहे?");
+          return;
+        }
+
+        if (q.includes("english")) {
+          setCallLanguage("en");
+          speak("Okay, I will speak in English. What is your question?");
+          return;
+        }
+
+        speak("Please say Hindi, Marathi or English.");
+        return;
+      }
+
+      try {
+        const resp = await fetch("/api/farm-ai/ask", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            question,
+            language: lang,
+            sensorData: {
+              moisture: sensorData.moisture,
+              ph: sensorData.ph,
+              temperature: sensorData.temperature,
+              ec: sensorData.ec,
+
+              nitrogen: sensorData.nitrogen,
+              phosphorus: sensorData.phosphorus,
+              potassium: sensorData.potassium,
+              crop: sensorData.crop,
+              fertilizer: sensorData.fertilizer,
+            },
+          }),
+        });
+
+        console.log("Status:", resp.status);
+
+        const json = await resp.json();
+        console.log("Response:", json);
+
+        speak(json.answer || "Mujhe jawab nahi mila");
+      } catch (err) {
+        console.error(err);
+        speak("Server error aaya hai");
+      }
+    };
+    recognition.onerror = (e: any) => {};
+
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onerror = (e: any) => {};
+  };
+  const [connectingExpert, setConnectingExpert] = useState(false);
+  const [callLanguage, setCallLanguage] = useState("");
   const handleExpertCall = () => {
     setConnectingExpert(true);
-    setTimeout(() => setConnectingExpert(false), 4000);
+    const msg =
+      "Welcome to Senso Tech Expert Support. Please choose your language. Hindi, Marathi or English.";
+    speak(msg);
+    window.speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(msg);
+
+    utter.onend = () => {
+      startListening();
+    };
+
+    window.speechSynthesis.speak(utter);
+
+    // setTimeout(() => {
+    //   startListening();
+    // }, 3000);
   };
 
   return (
@@ -272,7 +390,10 @@ export default function FarmDashboard({
                     <div
                       key={i}
                       className="weather-card flex-shrink-0 animate-pulse"
-                      style={{ background: "rgba(0,20,0,0.4)", border: "1px solid rgba(74,222,128,0.1)" }}
+                      style={{
+                        background: "rgba(0,20,0,0.4)",
+                        border: "1px solid rgba(74,222,128,0.1)",
+                      }}
                     >
                       <div className="w-8 h-2 rounded bg-white/10 mb-2" />
                       <div className="w-8 h-7 rounded bg-white/10 mb-2" />
@@ -293,16 +414,34 @@ export default function FarmDashboard({
                           : "1px solid rgba(74, 222, 128, 0.15)",
                       }}
                     >
-                      <p className="font-bold mb-1" style={{ fontSize: "10px", color: day.isToday ? "#4ade80" : "rgba(255,255,255,0.5)" }}>
+                      <p
+                        className="font-bold mb-1"
+                        style={{
+                          fontSize: "10px",
+                          color: day.isToday
+                            ? "#4ade80"
+                            : "rgba(255,255,255,0.5)",
+                        }}
+                      >
                         {day.dayKey}
                       </p>
                       <div className="text-2xl mb-1">{day.icon}</div>
-                      <p className="text-white font-bold text-sm">{day.high}°</p>
+                      <p className="text-white font-bold text-sm">
+                        {day.high}°
+                      </p>
                       <p className="text-white/40 text-xs">{day.low}°</p>
-                      <p className="text-xs mt-1" style={{ color: day.isToday ? "#86efac" : "rgba(134,239,172,0.7)" }}>{day.cond}</p>
+                      <p
+                        className="text-xs mt-1"
+                        style={{
+                          color: day.isToday
+                            ? "#86efac"
+                            : "rgba(134,239,172,0.7)",
+                        }}
+                      >
+                        {day.cond}
+                      </p>
                     </div>
-                  ))
-              }
+                  ))}
             </div>
           </div>
 
@@ -360,6 +499,23 @@ export default function FarmDashboard({
                   label="Potassium"
                   unit="mg/L"
                   icon="🌾"
+                />
+                <CircleProgress
+                  value={sensorData.temperature}
+                  max={60}
+                  color="#ef4444"
+                  label="Temperature"
+                  unit="°C"
+                  icon="🌡️"
+                />
+
+                <CircleProgress
+                  value={sensorData.ec}
+                  max={3000}
+                  color="#06b6d4"
+                  label="EC"
+                  unit="µS/cm"
+                  icon="⚡"
                 />
               </div>
             </div>
@@ -422,7 +578,6 @@ export default function FarmDashboard({
               </div>
             </div>
           </div>
-
         </div>
 
         {/* Dashboard Bottom Navigation */}
@@ -504,10 +659,14 @@ export default function FarmDashboard({
 
         {/* Expert Connecting Popup */}
         {connectingExpert && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            onClick={() => setConnectingExpert(false)}
+          >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <div
               className="relative rounded-2xl p-8 text-center w-full max-w-xs"
+              onClick={(e) => e.stopPropagation()}
               style={{
                 background: "rgba(0, 20, 0, 0.95)",
                 border: "1px solid rgba(74, 222, 128, 0.4)",
@@ -531,9 +690,21 @@ export default function FarmDashboard({
               <p className="text-green-300 font-bold text-lg mb-1">
                 SENSOTECH Expert
               </p>
+              <p className="text-white text-sm mt-2">
+                📞 Tring Tring... SENSOTECH AI Calling
+              </p>
               <p className="text-white/60 text-sm mb-4">
                 {t(lang, "connectingExpert")}
               </p>
+              <button
+                onClick={startListening}
+                className="mt-4 w-16 h-16 rounded-full flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(135deg,#15803d,#4ade80)",
+                }}
+              >
+                <Mic size={28} color="white" />
+              </button>
               <div className="flex justify-center gap-1">
                 {[1, 2, 3].map((i) => (
                   <div

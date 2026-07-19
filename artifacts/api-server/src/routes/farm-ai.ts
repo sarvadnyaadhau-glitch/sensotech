@@ -6,7 +6,6 @@ const router = Router();
 router.post("/ask", async (req, res) => {
   const { question, language, sensorData, farmName, cropType } = req.body;
   try {
-
     if (!question || !sensorData) {
       res.status(400).json({ error: "question and sensorData are required" });
       return;
@@ -31,6 +30,8 @@ Current live sensor readings for ${farmName || "the farm"} (Crop: ${crop}):
 - Nitrogen (N): ${sensorData.nitrogen} mg/L
 - Phosphorus (P): ${sensorData.phosphorus} mg/L
 - Potassium (K): ${sensorData.potassium} mg/L
+- Temperature: ${sensorData.temperature} °C
+- Electrical Conductivity (EC): ${sensorData.ec} µS/cm
 - AI Recommended Crop: ${crop}
 - AI Recommended Fertilizer: ${fertilizer}
 
@@ -38,26 +39,42 @@ IMPORTANT RULES:
 1. You MUST answer ONLY in ${langName} language. Do not use any other language at all. Every single word must be in ${langName}.
 2. Only answer farming-related questions (crops, soil, irrigation, fertilizers, weather, pests, harvest).
 3. Keep answers concise — 2 to 4 sentences max. Be direct and practical.
-4. Use the actual sensor data above when the question is about soil health, crops, or fertilizer.
+4. Use the actual sensor data aboveIf the user asks about temperature or EC, ALWAYS answer using the live Temperature and EC values above. Never say the data is unavailable if those values are present. when the question is about soil health, crops, or fertilizer.
 5. ALWAYS spell the brand name "SENSOTECH" exactly in ALL CAPS. Never change it to "Sensotech", "Sensotech", or any other variation.
 6. The crop name is "${crop}". Always use this exact name. Do NOT translate it to "Kapas", "कपास", "कापूस", or any other language variant.
 7. If the question is about who created SENSOTECH, who built the app, who is the founder, or who made you, answer:
    - English: "SENSOTECH was created by Vanshal Mohan Adhau."
    - Marathi: "SENSOTECH ची निर्मिती वंशल मोहन अधाव यांनी केली."
    - Hindi: "SENSOTECH का निर्माण वंशल मोहन अधाव ने किया।"
-8. If the question is NOT related to farming, soil, crops, irrigation, fertilizers, pests, agriculture, or SENSOTECH creator, respond ONLY with:
-   - English: "I am not sure about this. For better guidance, please click on the Expert Call button."
+8. 8. If the user asks to talk to customer care, support team, human expert, real person, call center, helpline, or service representative:
+
+English:
+"Thank you for contacting SENSOTECH Support. Our experts are currently assisting other farmers. As soon as an expert becomes available, they will contact you. Meanwhile, I can help you with farming-related questions."
+
+Marathi:
+"SENSOTECH सपोर्टशी संपर्क साधल्याबद्दल धन्यवाद. आमचे तज्ञ सध्या इतर शेतकऱ्यांना मदत करत आहेत. तज्ञ उपलब्ध होताच ते तुमच्याशी संपर्क साधतील. तोपर्यंत मी शेतीविषयक प्रश्नांमध्ये मदत करू शकते."
+
+Hindi:
+"SENSOTECH सपोर्ट से संपर्क करने के लिए धन्यवाद। हमारे विशेषज्ञ इस समय अन्य किसानों की सहायता कर रहे हैं। जैसे ही कोई विशेषज्ञ उपलब्ध होगा, वह आपसे संपर्क करेगा। तब तक मैं आपके खेती संबंधी प्रश्नों में सहायता कर सकती हूँ।"
+
+If the question is unrelated to farming and unrelated to customer care requests, politely say that you can only assist with farming and SENSOTECH related topics.
    - Marathi: "मला याबद्दल खात्री नाही. चांगल्या मार्गदर्शनासाठी, कृपया Expert Call बटण वापरा."
    - Hindi: "मुझे इस बारे में यकीन नहीं है। बेहतर मार्गदर्शन के लिए, कृपया Expert Call बटन दबाएं।"
 9. Be warm, encouraging, and supportive like a trusted local farming advisor.
 10. When talking about crops — refer to "${crop}" from the sensor data.
-11. When talking about fertilizer — refer to "${fertilizer}" from the sensor data.`;
+11. When talking about fertilizer — refer to "${fertilizer}" from the sensor data.
+    12. If the user asks only for the current value of a sensor (EC, pH, Temperature, Moisture, Nitrogen, Phosphorus or Potassium), reply with only the live sensor value and its unit. Do not explain the meaning unless the user explicitly asks.
 
+    Examples:
+    - "What is my EC?" → Reply only with the current live EC value.
+    - "Mera EC kitna hai?" → Reply only with the current live EC value.
+    - "Temperature?" → Reply only with the current live temperature value.
+      
+      13. Never spell "SENSOTECH" letter by letter. Always pronounce it naturally as "Senso Tech".;
+   14. Never explain what EC, pH, moisture, temperature, or NPK means unless the user explicitly asks "What is EC?" or "What is pH?". If the user asks only for a value, return only the live value with its unit.`;
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [
-        { role: "user", parts: [{ text: question }] },
-      ],
+      contents: [{ role: "user", parts: [{ text: question }] }],
       config: {
         systemInstruction: systemPrompt,
         maxOutputTokens: 8192,
@@ -68,22 +85,44 @@ IMPORTANT RULES:
     const answer: string =
       response.text ||
       (response as any).candidates?.[0]?.content?.parts?.[0]?.text ||
-      (response as any).candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ||
+      (response as any).candidates?.[0]?.content?.parts
+        ?.map((p: any) => p.text)
+        .filter(Boolean)
+        .join("") ||
       "";
 
-    req.log.info({ answerLength: answer.length, finishReason: (response as any).candidates?.[0]?.finishReason }, "Farm AI response");
+    req.log.info(
+      {
+        answerLength: answer.length,
+        finishReason: (response as any).candidates?.[0]?.finishReason,
+      },
+      "Farm AI response",
+    );
 
     if (!answer) {
-      res.status(500).json({ answer: "AI response was empty. Please try again.", confidence: "low" });
+      res
+        .status(500)
+        .json({
+          answer: "AI response was empty. Please try again.",
+          confidence: "low",
+        });
       return;
     }
 
     // Sanitize brand name and crop name — catch any AI misspellings
     let sanitized = answer;
-    // Fix SENSOTECH variants (Sensotech, sensotech, SENSOTECH, SENSOTECH, etc.)
+    // Fix SENSOTECH variants (Sensotech, sensotech, SENSOTECH, SENSOTECH, etc.) 
     sanitized = sanitized.replace(/Sensotech/gi, "SENSOTECH");
     // Fix Cotton translations in Hindi/Marathi
-    const cottonVariants = ["Kapas", "kapas", "कपास", "कापूस", "कपास", "कापूस", "कापस"];
+    const cottonVariants = [
+      "Kapas",
+      "kapas",
+      "कपास",
+      "कापूस",
+      "कपास",
+      "कापूस",
+      "कापस",
+    ];
     for (const v of cottonVariants) {
       const re = new RegExp(v, "g");
       sanitized = sanitized.replace(re, "Cotton");
@@ -93,11 +132,12 @@ IMPORTANT RULES:
   } catch (error) {
     req.log.error({ error }, "Farm AI error");
     res.status(500).json({
-      answer: language === "mr"
-        ? "माफ करा, AI सध्या उपलब्ध नाही. कृपया पुन्हा प्रयत्न करा."
-        : language === "hi"
-        ? "माफ करें, AI अभी उपलब्ध नहीं है। कृपया दोबारा कोशिश करें।"
-        : "Sorry, AI is temporarily unavailable. Please try again.",
+      answer:
+        language === "mr"
+          ? "माफ करा, AI सध्या उपलब्ध नाही. कृपया पुन्हा प्रयत्न करा."
+          : language === "hi"
+            ? "माफ करें, AI अभी उपलब्ध नहीं है। कृपया दोबारा कोशिश करें।"
+            : "Sorry, AI is temporarily unavailable. Please try again.",
       confidence: "low",
     });
   }

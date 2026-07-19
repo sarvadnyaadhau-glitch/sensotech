@@ -8,6 +8,10 @@ export interface LiveSensorData {
   potassium: number;
   moisture: number;
   ph: number;
+  temperature: number;
+  ec: number;
+  
+
   crop: string;
   fertilizer: string;
 }
@@ -18,6 +22,8 @@ export const DEFAULT_SENSOR_DATA: LiveSensorData = {
   potassium: 320,
   moisture: 100,
   ph: 7.0,
+  temperature: 28,
+    ec: 650,
   crop: "Cotton",
   fertilizer: "No Fertilizer Required",
 };
@@ -39,6 +45,10 @@ export function useSensorData(): { data: LiveSensorData; loading: boolean } {
             potassium: val.potassium ?? prev.potassium,
             moisture: val.moisture ?? prev.moisture,
             ph: val.ph ?? prev.ph,
+
+            temperature: val.temperature ?? prev.temperature,
+            ec: val.ec ?? prev.ec,
+
             crop: val.crop ?? prev.crop,
             fertilizer: val.fertilizer ?? prev.fertilizer,
           }));

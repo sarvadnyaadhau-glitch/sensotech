@@ -592,10 +592,13 @@ IMPORTANT RULES:
       sanitized = sanitized.replace(re, "Cotton");
     }
 
-    res.json({ answer: sanitized, confidence: "high" });
+    return res.json({
+          answer: sanitized,
+          confidence: "high"
+    });
   } catch (error) {
     req.log.error({ error }, "Crop plan fallback error");
-    res.status(500).json({
+    return res.status(500).json({
       answer: l === "mr"
         ? "माफ करा, AI सध्या उपलब्ध नाही. कृपया पुन्हा प्रयत्न करा."
         : l === "hi"
