@@ -438,9 +438,6 @@ export default function VoiceAI({ onBack }: VoiceAIProps) {
   const [showPicker, setShowPicker] = useState(() => !getSavedLang());
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const { data: sensorData } = useSensorData();
-  useEffect(() => {
-    console.log("LIVE:", sensorData);
-  }, [sensorData]);
   const [phase, setPhase] = useState<Phase>("idle");
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = getSavedLang();

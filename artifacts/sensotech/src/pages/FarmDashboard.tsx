@@ -202,11 +202,7 @@ export default function FarmDashboard({
     window.speechSynthesis.speak(utter);
   };
   const startListening = () => {
-    alert("Mic clicked");
-    const SR =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-    console.log("SR =", SR);
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!SR) {
       alert("Speech Recognition not supported");
       return;
@@ -219,7 +215,7 @@ export default function FarmDashboard({
     recognition.lang =
       lang === "hi" ? "hi-IN" : lang === "mr" ? "mr-IN" : "en-IN";
 
-    recognition.onresult = async (event: any) => {
+    recognition.onresult = async (event: SpeechRecognitionEvent) => {
       const question = event.results[0][0].transcript;
       if (!callLanguage) {
         const q = question.toLowerCase();
@@ -260,7 +256,6 @@ export default function FarmDashboard({
               ph: sensorData.ph,
               temperature: sensorData.temperature,
               ec: sensorData.ec,
-
               nitrogen: sensorData.nitrogen,
               phosphorus: sensorData.phosphorus,
               potassium: sensorData.potassium,
@@ -270,23 +265,14 @@ export default function FarmDashboard({
           }),
         });
 
-        console.log("Status:", resp.status);
-
         const json = await resp.json();
-        console.log("Response:", json);
-
         speak(json.answer || "Mujhe jawab nahi mila");
-      } catch (err) {
-        console.error(err);
+      } catch {
         speak("Server error aaya hai");
       }
     };
-    recognition.onerror = (e: any) => {};
 
-    recognition.continuous = true;
-    recognition.interimResults = false;
-
-    recognition.onerror = (e: any) => {};
+    recognition.onerror = () => {};
   };
   const [connectingExpert, setConnectingExpert] = useState(false);
   const [callLanguage, setCallLanguage] = useState("");
