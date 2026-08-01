@@ -34,6 +34,12 @@ interface Profile {
   address: string;
 }
 
+interface StoredProfile {
+  name: string;
+  mobile: string;
+  address: string;
+}
+
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
@@ -143,17 +149,20 @@ function PublicHome() {
 function AuthenticatedApp() {
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [step, setStep] = useState<Step>("language");
-  const [lang, setLang] = useState<Language>("en");
-  const [profile, setProfile] = useState<Profile>(() => ({
+  const storedProfile = getStoredProfile(user?.unsafeMetadata.sensotechProfile);
+  const initialProfile: Profile = {
     name:
+      storedProfile?.name ??
       user?.fullName ??
       user?.firstName ??
       user?.primaryEmailAddress?.emailAddress ??
       "",
-    mobile: "",
-    address: "Akola, Maharashtra",
-  }));
+    mobile: storedProfile?.mobile ?? user?.primaryPhoneNumber?.phoneNumber ?? "",
+    address: storedProfile?.address ?? "Akola, Maharashtra",
+  };
+  const [step, setStep] = useState<Step>(storedProfile ? "home" : "language");
+  const [lang, setLang] = useState<Language>("en");
+  const [profile, setProfile] = useState<Profile>(initialProfile);
   const [activeFarm, setActiveFarm] = useState<string>("");
   const [activeNav, setActiveNav] = useState<NavTab>("home");
   const isNight = useNightMode();
@@ -188,6 +197,7 @@ function AuthenticatedApp() {
   if (step === "profile") {
     return (
       <ProfileSetup
+        initialProfile={profile}
         onComplete={(nextProfile) => {
           setProfile(nextProfile);
           setStep("home");
@@ -232,6 +242,26 @@ function AuthenticatedApp() {
   }
 
   return <VoiceAI onBack={() => setStep("dashboard")} />;
+}
+
+function getStoredProfile(value: unknown): StoredProfile | null {
+  if (typeof value !== "object" || value === null) return null;
+  const record = value as Record<string, unknown>;
+
+  if (
+    typeof record.name !== "string" ||
+    typeof record.mobile !== "string" ||
+    typeof record.address !== "string" ||
+    record.profileCompleted !== true
+  ) {
+    return null;
+  }
+
+  return {
+    name: record.name,
+    mobile: record.mobile,
+    address: record.address,
+  };
 }
 
 function HomeRoute() {

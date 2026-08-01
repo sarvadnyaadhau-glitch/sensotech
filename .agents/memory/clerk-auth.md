@@ -8,3 +8,5 @@ SENSOTECH uses Replit-managed Clerk for web authentication. The browser uses Cle
 **Why:** The product's original login button only simulated success with a timeout, so real account verification and server-side route protection were required.
 
 **How to apply:** Keep sign-in and sign-up as Clerk path routes, keep the Clerk proxy before Express body parsers in production, and protect AI/crop-plan API routes with Clerk auth. Development-key warnings in preview are expected; production uses the provisioned live environment after publishing.
+
+Profile completion uses Clerk user attributes and unsafe metadata. Normal users must verify an Indian mobile number through Clerk SMS OTP; the owner-only admin code is a separate path and must never be treated as phone verification.
