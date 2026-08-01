@@ -40,6 +40,7 @@ const clerkPubKey = publishableKeyFromHost(
 );
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const ADMIN_EMAIL = "vanshalmadhau@gmail.com";
 
 if (!clerkPubKey) {
   throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY.");
@@ -156,6 +157,8 @@ function AuthenticatedApp() {
   const [activeFarm, setActiveFarm] = useState<string>("");
   const [activeNav, setActiveNav] = useState<NavTab>("home");
   const isNight = useNightMode();
+  const isAdmin =
+    user?.primaryEmailAddress?.emailAddress.toLowerCase() === ADMIN_EMAIL;
 
   useEffect(() => {
     if (isNight) {
@@ -206,6 +209,7 @@ function AuthenticatedApp() {
         activeNav={activeNav}
         lang={lang}
         onLogout={handleLogout}
+        isAdmin={isAdmin}
       />
     );
   }

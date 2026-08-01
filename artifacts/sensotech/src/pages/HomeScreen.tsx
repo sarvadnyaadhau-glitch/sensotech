@@ -9,6 +9,7 @@ interface HomeScreenProps {
   activeNav: "home" | "chat" | "news";
   lang: Language;
   onLogout: () => void;
+  isAdmin: boolean;
 }
 
 const farms = [
@@ -44,7 +45,7 @@ const farms = [
   },
 ];
 
-export default function HomeScreen({ profile, onFarmClick, onNav, activeNav, lang, onLogout }: HomeScreenProps) {
+export default function HomeScreen({ profile, onFarmClick, onNav, activeNav, lang, onLogout, isAdmin }: HomeScreenProps) {
   const [showProfile, setShowProfile] = useState(false);
 
   return (
@@ -93,6 +94,14 @@ export default function HomeScreen({ profile, onFarmClick, onNav, activeNav, lan
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-green-300 text-xs font-bold">{t(lang, "live")}</span>
               </div>
+              {isAdmin && (
+                <span
+                  className="rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wide text-yellow-200"
+                  style={{ background: "rgba(250, 204, 21, 0.14)", border: "1px solid rgba(250, 204, 21, 0.35)" }}
+                >
+                  Admin
+                </span>
+              )}
               <button
                 onClick={() => setShowProfile(true)}
                 className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-lg relative"
@@ -214,6 +223,7 @@ export default function HomeScreen({ profile, onFarmClick, onNav, activeNav, lan
                 { label: t(lang, "address"), value: profile.address || "Akola, Maharashtra" },
                 { label: "Serial No", value: "001", valueColor: "#4ade80" },
                 { label: "Status", value: "Active ●", valueColor: "#4ade80" },
+                  ...(isAdmin ? [{ label: "Role", value: "Administrator", valueColor: "#fde047" }] : []),
               ].map((row) => (
                 <div key={row.label} className="flex items-center justify-between rounded-xl p-3" style={{ background: "rgba(74, 222, 128, 0.05)", border: "1px solid rgba(74, 222, 128, 0.1)" }}>
                   <span className="text-white/50 text-sm">{row.label}</span>
