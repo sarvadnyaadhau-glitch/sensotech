@@ -8,6 +8,7 @@ interface HomeScreenProps {
   onNav: (tab: "home" | "chat" | "news") => void;
   activeNav: "home" | "chat" | "news";
   lang: Language;
+  onLogout: () => void;
 }
 
 const farms = [
@@ -43,7 +44,7 @@ const farms = [
   },
 ];
 
-export default function HomeScreen({ profile, onFarmClick, onNav, activeNav, lang }: HomeScreenProps) {
+export default function HomeScreen({ profile, onFarmClick, onNav, activeNav, lang, onLogout }: HomeScreenProps) {
   const [showProfile, setShowProfile] = useState(false);
 
   return (
@@ -222,6 +223,14 @@ export default function HomeScreen({ profile, onFarmClick, onNav, activeNav, lan
             </div>
             <button className="w-full py-3 rounded-xl font-bold text-white/70 text-sm transition-all hover:text-white" style={{ background: "rgba(74, 222, 128, 0.08)", border: "1px solid rgba(74, 222, 128, 0.2)" }}>
               {t(lang, "editProfile")}
+            </button>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="w-full py-3 rounded-xl font-bold text-red-200/80 text-sm transition-all hover:text-red-100"
+              style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.2)" }}
+            >
+              Sign out
             </button>
           </div>
         </div>

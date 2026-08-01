@@ -1,0 +1,1 @@
+- [Authentication](clerk-auth.md) — SENSOTECH uses Replit-managed Clerk with browser cookies and protected Express API routes.
