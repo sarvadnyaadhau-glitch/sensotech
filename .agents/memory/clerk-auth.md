@@ -9,4 +9,8 @@ SENSOTECH uses Replit-managed Clerk for web authentication. The browser uses Cle
 
 **How to apply:** Keep sign-in and sign-up as Clerk path routes, keep the Clerk proxy before Express body parsers in production, and protect AI/crop-plan API routes with Clerk auth. Development-key warnings in preview are expected; production uses the provisioned live environment after publishing.
 
-Profile completion uses Clerk user attributes and unsafe metadata. Normal users must verify an Indian mobile number through Clerk SMS OTP; the owner-only admin code is a separate path and must never be treated as phone verification.
+Replit-managed Clerk does not currently support SMS/phone sign-in or phone OTP verification. Profile completion saves name, address, and a format-validated phone number in Clerk metadata without claiming phone verification.
+
+**Why:** The managed tenant rejects `phone_number` operations even though Clerk's generic dashboard URL mentions email/phone settings; the dashboard link does not mean this Replit-managed environment supports SMS.
+
+**How to apply:** Do not use `user.createPhoneNumber()` or promise SMS OTP with Replit-managed Clerk. Validate the mobile format locally, save it as profile metadata, and use an external SMS provider only after explicitly selecting and configuring that architecture.

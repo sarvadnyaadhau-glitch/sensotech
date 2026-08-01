@@ -3,9 +3,6 @@ import { Leaf } from "lucide-react";
 import { useUser } from "@clerk/react";
 import { t, type Language } from "@/lib/translations";
 
-const ADMIN_EMAIL = "vanshalmadhau@gmail.com";
-const ADMIN_VERIFICATION_CODE = "4545";
-
 interface Profile {
   name: string;
   mobile: string;
@@ -18,11 +15,6 @@ interface ProfileSetupProps {
   initialProfile?: Profile;
 }
 
-interface PhoneVerificationResource {
-  prepareVerification: () => Promise<PhoneVerificationResource>;
-  attemptVerification: (params: { code: string }) => Promise<PhoneVerificationResource>;
-}
-
 function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");
 }
@@ -33,7 +25,7 @@ function isValidIndianMobile(value: string): boolean {
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
-  return "Unable to verify this mobile number. Please try again.";
+  return "Unable to save your profile. Please try again.";
 }
 
 export default function ProfileSetup({ onComplete, lang, initialProfile }: ProfileSetupProps) {
@@ -43,14 +35,8 @@ export default function ProfileSetup({ onComplete, lang, initialProfile }: Profi
     initialProfile?.mobile.replace(/^\+91/, "") ?? "",
   );
   const [address, setAddress] = useState(initialProfile?.address ?? "");
-  const [otp, setOtp] = useState("");
-  const [verificationStage, setVerificationStage] = useState<"form" | "code">("form");
-  const [pendingPhone, setPendingPhone] = useState<PhoneVerificationResource | null>(null);
   const [error, setError] = useState("");
   const [isBusy, setIsBusy] = useState(false);
-
-  const email = user?.primaryEmailAddress?.emailAddress.toLowerCase();
-  const isAdmin = email === ADMIN_EMAIL;
 
   const saveProfile = async (normalizedMobile: string) => {
     if (!user) {
@@ -74,8 +60,8 @@ export default function ProfileSetup({ onComplete, lang, initialProfile }: Profi
           mobile: normalizedMobile,
           address: address.trim() || "Akola, Maharashtra",
           profileCompleted: true,
-          mobileVerified: !isAdmin,
-          verificationMethod: isAdmin ? "admin-code" : "sms-otp",
+          mobileVerified: false,
+          verificationMethod: "not-verified",
         },
       },
     });
@@ -105,56 +91,9 @@ export default function ProfileSetup({ onComplete, lang, initialProfile }: Profi
     setIsBusy(true);
 
     try {
-      if (isAdmin) {
-        setVerificationStage("code");
-        setPendingPhone(null);
-        return;
-      }
-
-      if (!user) {
-        throw new Error("Your account is still loading. Please try again.");
-      }
-
-      const existingPhone = user.phoneNumbers.find(
-        (phone) => phone.phoneNumber === normalizedMobile,
-      );
-      const phone = existingPhone ?? (await user.createPhoneNumber({ phoneNumber: normalizedMobile }));
-      await phone.prepareVerification();
-      setPendingPhone(phone);
-      setVerificationStage("code");
-    } catch (verificationError: unknown) {
-      setError(getErrorMessage(verificationError));
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const handleVerify = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError("");
-
-    if (!/^\d{4,8}$/.test(otp)) {
-      setError("Enter the OTP sent to your mobile number.");
-      return;
-    }
-
-    const normalizedMobile = `+91${digitsOnly(mobile)}`;
-    setIsBusy(true);
-
-    try {
-      if (isAdmin && otp === ADMIN_VERIFICATION_CODE) {
-        await saveProfile(normalizedMobile);
-        return;
-      }
-
-      if (!pendingPhone) {
-        throw new Error("Verification session expired. Please request a new OTP.");
-      }
-
-      await pendingPhone.attemptVerification({ code: otp });
       await saveProfile(normalizedMobile);
-    } catch (verificationError: unknown) {
-      setError(getErrorMessage(verificationError));
+    } catch (saveError: unknown) {
+      setError(getErrorMessage(saveError));
     } finally {
       setIsBusy(false);
     }
@@ -188,16 +127,8 @@ export default function ProfileSetup({ onComplete, lang, initialProfile }: Profi
             </span>
             <Leaf size={18} color="#4ade80" />
           </div>
-          <h2 className="text-2xl font-black text-white mb-1">
-            {verificationStage === "form" ? t(lang, "profileSetup") : "Verify mobile number"}
-          </h2>
-          <p className="text-white/50 text-sm">
-            {verificationStage === "form"
-              ? t(lang, "profileSubtitle")
-              : isAdmin
-                ? "Enter the admin verification code to continue"
-                : `Enter the OTP sent to +91 ${digitsOnly(mobile)}`}
-          </p>
+          <h2 className="text-2xl font-black text-white mb-1">{t(lang, "profileSetup")}</h2>
+          <p className="text-white/50 text-sm">{t(lang, "profileSubtitle")}</p>
         </div>
 
         <div
@@ -208,8 +139,7 @@ export default function ProfileSetup({ onComplete, lang, initialProfile }: Profi
             backdropFilter: "blur(20px)",
           }}
         >
-          {verificationStage === "form" ? (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div>
                 <label className="text-green-300 text-xs font-bold uppercase tracking-wider mb-2 block">
                   {t(lang, "fullName")}
@@ -273,52 +203,9 @@ export default function ProfileSetup({ onComplete, lang, initialProfile }: Profi
                 className="w-full py-4 rounded-xl text-white font-bold text-lg mt-2 transition-all duration-200 active:scale-95 hover:opacity-90 disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #16a34a, #4ade80)", boxShadow: "0 4px 20px rgba(74, 222, 128, 0.3)" }}
               >
-                {isBusy ? "Sending verification..." : "Verify mobile number"}
+                {isBusy ? "Saving profile..." : t(lang, "startSmartFarming")}
               </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerify} className="flex flex-col gap-5">
-              <div>
-                <label className="text-green-300 text-xs font-bold uppercase tracking-wider mb-2 block">
-                  {isAdmin ? "Admin verification code" : "One-time password"}
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  className="form-input text-center tracking-[0.5em] text-xl"
-                  placeholder="••••"
-                  value={otp}
-                  maxLength={8}
-                  onChange={(event) => setOtp(digitsOnly(event.target.value))}
-                  required
-                  autoFocus
-                />
-              </div>
-              {error && <p className="text-red-300 text-sm">{error}</p>}
-              <button
-                type="submit"
-                disabled={isBusy}
-                className="w-full py-4 rounded-xl text-white font-bold text-lg transition-all duration-200 active:scale-95 hover:opacity-90 disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #16a34a, #4ade80)", boxShadow: "0 4px 20px rgba(74, 222, 128, 0.3)" }}
-              >
-                {isBusy ? "Verifying..." : "Verify and continue"}
-              </button>
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={() => {
-                  setVerificationStage("form");
-                  setOtp("");
-                  setPendingPhone(null);
-                  setError("");
-                }}
-                className="text-green-300/70 text-sm hover:text-green-200"
-              >
-                Change mobile number
-              </button>
-            </form>
-          )}
+          </form>
         </div>
       </div>
     </div>
