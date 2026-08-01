@@ -43,16 +43,6 @@ export default function ProfileSetup({ onComplete, lang, initialProfile }: Profi
       throw new Error("Your account is still loading. Please try again.");
     }
 
-    const nameParts = name.trim().split(/\s+/);
-    const firstName = nameParts.shift() ?? name.trim();
-    const lastName = nameParts.join(" ");
-
-    if (lastName) {
-      await user.update({ firstName, lastName });
-    } else {
-      await user.update({ firstName });
-    }
-
     await user.updateMetadata({
       unsafeMetadata: {
         sensotechProfile: {
