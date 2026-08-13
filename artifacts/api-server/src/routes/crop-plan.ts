@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ai } from "@workspace/integrations-gemini-ai";
+import { ai, isAIConfigured } from "@workspace/integrations-gemini-ai";
 
 const router = Router();
 
@@ -331,64 +331,38 @@ function formatRecommendation(crops: string[], sensorData: any, lang: string): s
   const cropList = crops.map((c, i) => `${i + 1}. ${c}`).join("\n");
 
   if (l === "Hindi") {
-    return `\u{1F4C9} **आपकी मिट्टी के आंकड़ों के आधार पर:**
-\u{1F33E} pH: ${sensorData.ph}
-\u{1F4A7} नमी: ${sensorData.moisture}%
-\u{1F331} N: ${sensorData.nitrogen}, P: ${sensorData.phosphorus}, K: ${sensorData.potassium}
-
-**\u{1F31F} अनुशंसित फसलें:**
-${cropList}
-
-\u{1F449} क्या आप इनमें से किसी फसल की विस्तृत खेती योजना चाहते हैं? कृपया फसल का नाम लिखें।`;
+    return `\u{1F4C9} **आपकी मिट्टी के आंकड़ों के आधार पर:**\n\u{1F33E} pH: ${sensorData.ph}\n\u{1F4A7} नमी: ${sensorData.moisture}%\n\u{1F331} N: ${sensorData.nitrogen}, P: ${sensorData.phosphorus}, K: ${sensorData.potassium}\n\n**\u{1F31F} अनुशंसित फसलें:**\n${cropList}\n\n\u{1F449} क्या आप इनमें से किसी फसल की विस्तृत खेती योजना चाहते हैं? कृपया फसल का नाम बताएं.`;
   }
 
   if (l === "Marathi") {
-    return `\u{1F4C9} **तुमच्या मातीच्या आकड्यांवर आधारित:**
-\u{1F33E} pH: ${sensorData.ph}
-\u{1F4A7} आर्द्रता: ${sensorData.moisture}%
-\u{1F331} N: ${sensorData.nitrogen}, P: ${sensorData.phosphorus}, K: ${sensorData.potassium}
-
-**\u{1F31F} शिफारस केलेली पीके:**
-${cropList}
-
-\u{1F449} या पैकी कोणत्याही पिकाची विस्तृत शेती योजना हवी आहे का? कृपया पिकाचे नाव लिहा.`;
+    return `\u{1F4C9} **तुमच्या मातीच्या आकड्यांवर आधारित:**\n\u{1F33E} pH: ${sensorData.ph}\n\u{1F4A7} आर्द्रता: ${sensorData.moisture}%\n\u{1F331} N: ${sensorData.nitrogen}, P: ${sensorData.phosphorus}, K: ${sensorData.potassium}\n\n**\u{1F31F} शिफारस केलेली पीके:**\n${cropList}\n\n\u{1F449} या पैकी कोणत्याही पिकाची विस्तृत शेती योजना हवी आहे का? कृपया पिकाचे नाव सांगा.`;
   }
 
-  return `\u{1F4C9} **Based on your soil data:**
-\u{1F33E} pH: ${sensorData.ph}
-\u{1F4A7} Moisture: ${sensorData.moisture}%
-\u{1F331} N: ${sensorData.nitrogen}, P: ${sensorData.phosphorus}, K: ${sensorData.potassium}
-
-**\u{1F31F} Recommended Crops:**
-${cropList}
-
-\u{1F449} Would you like a detailed farming plan for any of these? Please type the crop name.`;
+  return `\u{1F4C9} **Based on your soil data:**\n\u{1F33E} pH: ${sensorData.ph}\n\u{1F4A7} Moisture: ${sensorData.moisture}%\n\u{1F331} N: ${sensorData.nitrogen}, P: ${sensorData.phosphorus}, K: ${sensorData.potassium}\n\n**\u{1F31F} Recommended Crops:**\n${cropList}\n\n\u{1F449} Would you like a detailed farming plan for any of these? Please type the crop name.`;
 }
 
 /* ── Confirm plan prompt ── */
 function confirmPlanPrompt(crop: string, lang: string): string {
   const l = langMap[lang] || "English";
-  if (l === "Hindi") return `\u{1F33E} **${crop}** चुन लिया गया।\n\nक्या मैं इसकी पूरी खेती योजना तैयार करूँ?\n\n\u{1F449} "हाँ" टाइप करें या स्टार्ट डेट बताएं (उदाहरण: 15 जनवरी 2026)`;
-  if (l === "Marathi") return `\u{1F33E} **${crop}** निवडले.\n\nकाय मी याची संपूर्ण शेती योजना तयार करू?\n\n\u{1F449} "हो" टाइप करा किंवा सुरू तारीख सांगा (उदाहरण: 15 जानेवारी 2026)`;
-  return `\u{1F33E} **${crop}** selected.\n\nShould I generate a complete cultivation plan?\n\n\u{1F449} Type "yes" or tell me the start date (e.g., 15 January 2026)`;
+  if (l === "Hindi") return `\u{1F33E} **${crop}** चुन लिया गया।\n\nक्या मैं इसकी पूरी खेती योजना तैयार करूं?`;
+  if (l === "Marathi") return `\u{1F33E} **${crop}** निवडले.\n\nकाय मी याची संपूर्ण शेती योजना तयार करावी?`;
+  return `\u{1F33E} **${crop}** selected.\n\nShould I generate a complete cultivation plan?`;
 }
 
 /* ── Ask for date prompt ── */
 function askDatePrompt(crop: string, lang: string): string {
   const l = langMap[lang] || "English";
-  if (l === "Hindi") return `\u{1F4C5} **${crop}** की खेती योजना के लिए, कृपया शुरू तारीख बताएं।\n\nउदाहरण: "15 जनवरी 2026" या "1 फरवरी 2026"`;
-  if (l === "Marathi") return `\u{1F4C5} **${crop}** ची शेती योजना साठी, कृपया सुरू तारीख सांगा.\n\nउदाहरण: "15 जानेवारी 2026" किंवा "1 फेब्रुवारी 2026"`;
-  return `\u{1F4C5} For the **${crop}** cultivation plan, please tell me the start date.\n\nExample: "15 January 2026" or "1 February 2026"`;
+  if (l === "Hindi") return `\u{1F4C5} **${crop}** की खेती योजना के लिए, कृपया शुरू तारीख बताएं।`;
+  if (l === "Marathi") return `\u{1F4C5} **${crop}** ची शेती योजना साठी, कृपया सुरू तारीख सांगा.`;
+  return `\u{1F4C5} For the **${crop}** cultivation plan, please tell me the start date.`;
 }
 
 /* ── Try to parse a date from user text ── */
 function parseDate(text: string): Date | null {
   const t = text.trim();
-  // Try ISO format
   const iso = new Date(t);
   if (!isNaN(iso.getTime())) return iso;
 
-  // Try common formats: "15 Jan 2026", "15 January 2026", "1/2/2026", etc.
   const patterns = [
     /(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{4})/i,
     /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
@@ -405,7 +379,6 @@ function parseDate(text: string): Date | null {
     if (m) {
       let d: number, mo: number, y: number;
       if (m[0].toLowerCase().includes("jan") || m[0].toLowerCase().includes("feb")) {
-        // Named month
         const mn = m[2].toLowerCase().substring(0, 3);
         d = parseInt(m[1], 10);
         mo = months[mn] ?? 0;
@@ -420,7 +393,6 @@ function parseDate(text: string): Date | null {
     }
   }
 
-  // Try "today", "tomorrow", "next week"
   const lower = t.toLowerCase();
   const now = new Date();
   if (lower.includes("today")) return now;
@@ -430,9 +402,9 @@ function parseDate(text: string): Date | null {
   return null;
 }
 
-/* ════════════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════════
    API ROUTES
-   ════════════════════════════════════════════════════════════════════════ */
+   ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1: Get crop recommendations ── */
 router.post("/recommend", (req, res) => {
@@ -529,7 +501,7 @@ router.post("/ask", async (req, res) => {
 
   // Quick intent detection for crop planning
   const q = (question || "").toLowerCase();
-  const isRecommend = /which crop|kons?i fasal|kons?i ph?asl|kons?i piik|kons?e pik|kouns?i fasal|kaun sa crop|kaun si fasal|kaun sa beej|kons?i beej|suggest crop|recommend crop|best crop|suitable crop|which crop to|what crop to/.test(q);
+  const isRecommend = /which crop|kons?i fasal|kons?i ph?asl|kons?i piik|kons?e pik|kouns?i fasal|kaun sa crop|kaun si fasal|kaun sa beej|kons?i beej|suggest crop|recommend crop|best crop|suitabl[...]/i.test(q);
   const isYes = /^(yes|haan|ha|h|haan|ha|yes|y|hooo|hoo|hooo|han|haan|hnn|haan|haa|ho|ho|haan|hn)$/i.test(q.trim());
   const isNo = /^(no|nahi|na|n|nhi|nahi|naa|nah|nahe|naheen|naa)$/i.test(q.trim());
 
@@ -547,6 +519,10 @@ router.post("/ask", async (req, res) => {
   // If it's a simple yes/no, handle it through the normal flow
   // The frontend will handle state management
   // Fallback to Gemini for everything else
+  if (!isAIConfigured()) {
+    return res.status(503).json({ answer: l === "mr" ? "AI service not configured" : l === "hi" ? "AI service not configured" : "AI service not configured" });
+  }
+
   try {
     const langName = langMap[l] || "English";
     const crop = cropType || sensorData.crop || "Unknown";
@@ -598,13 +574,11 @@ IMPORTANT RULES:
     });
   } catch (error) {
     req.log.error({ error }, "Crop plan fallback error");
-    return res.status(500).json({
-      answer: l === "mr"
+    return res.status(502).json({ answer: l === "mr"
         ? "माफ करा, AI सध्या उपलब्ध नाही. कृपया पुन्हा प्रयत्न करा."
         : l === "hi"
         ? "माफ करें, AI अभी उपलब्ध नहीं है। कृपया दोबारा कोशिश करें।"
-        : "Sorry, AI is temporarily unavailable. Please try again.",
-    });
+        : "Sorry, AI is temporarily unavailable. Please try again." });
   }
 });
 
