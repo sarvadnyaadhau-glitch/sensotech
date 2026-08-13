@@ -1,27 +1,38 @@
 import { Router } from "express";
-import { ai } from "@workspace/integrations-gemini-ai";
+import { ai, isAIConfigured } from "@workspace/integrations-gemini-ai";
 
 const router = Router();
 
 router.post("/ask", async (req, res) => {
   const { question, language, sensorData, farmName, cropType } = req.body;
-  try {
-    if (!question || !sensorData) {
-      res.status(400).json({ error: "question and sensorData are required" });
-      return;
-    }
 
-    const langMap: Record<string, string> = {
-      en: "English",
-      mr: "Marathi",
-      hi: "Hindi",
-    };
-    const langName = langMap[language] || "English";
+  // Validate request body
+  if (!question || typeof question !== "string" || !question.trim()) {
+    res.status(400).json({ error: "question is required and must be a non-empty string" });
+    return;
+  }
+  if (!sensorData || typeof sensorData !== "object") {
+    res.status(400).json({ error: "sensorData is required" });
+    return;
+  }
 
-    const crop = cropType || sensorData.crop || "Unknown";
-    const fertilizer = sensorData.fertilizer || "Not specified";
+  // If AI isn't configured, return a controlled 503
+  if (!isAIConfigured()) {
+    res.status(503).json({ error: "AI service not configured" });
+    return;
+  }
 
-    const systemPrompt = `You are SENSOTECH AI, an expert smart farming assistant embedded in an IoT-based agricultural monitoring system.
+  const langMap: Record<string, string> = {
+    en: "English",
+    mr: "Marathi",
+    hi: "Hindi",
+  };
+  const langName = langMap[language] || "English";
+
+  const crop = cropType || sensorData.crop || "Unknown";
+  const fertilizer = sensorData.fertilizer || "Not specified";
+
+  const systemPrompt = `You are SENSOTECH AI, an expert smart farming assistant embedded in an IoT-based agricultural monitoring system.
 You help Indian farmers understand their farm data and make smart decisions.
 
 Current live sensor readings for ${farmName || "the farm"} (Crop: ${crop}):
@@ -46,32 +57,9 @@ IMPORTANT RULES:
    - English: "SENSOTECH was created by Vanshal Mohan Adhau."
    - Marathi: "SENSOTECH ची निर्मिती वंशल मोहन अधाव यांनी केली."
    - Hindi: "SENSOTECH का निर्माण वंशल मोहन अधाव ने किया।"
-8. 8. If the user asks to talk to customer care, support team, human expert, real person, call center, helpline, or service representative:
+`;
 
-English:
-"Thank you for contacting SENSOTECH Support. Our experts are currently assisting other farmers. As soon as an expert becomes available, they will contact you. Meanwhile, I can help you with farming-related questions."
-
-Marathi:
-"SENSOTECH सपोर्टशी संपर्क साधल्याबद्दल धन्यवाद. आमचे तज्ञ सध्या इतर शेतकऱ्यांना मदत करत आहेत. तज्ञ उपलब्ध होताच ते तुमच्याशी संपर्क साधतील. तोपर्यंत मी शेतीविषयक प्रश्नांमध्ये मदत करू शकते."
-
-Hindi:
-"SENSOTECH सपोर्ट से संपर्क करने के लिए धन्यवाद। हमारे विशेषज्ञ इस समय अन्य किसानों की सहायता कर रहे हैं। जैसे ही कोई विशेषज्ञ उपलब्ध होगा, वह आपसे संपर्क करेगा। तब तक मैं आपके खेती संबंधी प्रश्नों में सहायता कर सकती हूँ।"
-
-If the question is unrelated to farming and unrelated to customer care requests, politely say that you can only assist with farming and SENSOTECH related topics.
-   - Marathi: "मला याबद्दल खात्री नाही. चांगल्या मार्गदर्शनासाठी, कृपया Expert Call बटण वापरा."
-   - Hindi: "मुझे इस बारे में यकीन नहीं है। बेहतर मार्गदर्शन के लिए, कृपया Expert Call बटन दबाएं।"
-9. Be warm, encouraging, and supportive like a trusted local farming advisor.
-10. When talking about crops — refer to "${crop}" from the sensor data.
-11. When talking about fertilizer — refer to "${fertilizer}" from the sensor data.
-    12. If the user asks only for the current value of a sensor (EC, pH, Temperature, Moisture, Nitrogen, Phosphorus or Potassium), reply with only the live sensor value and its unit. Do not explain the meaning unless the user explicitly asks.
-
-    Examples:
-    - "What is my EC?" → Reply only with the current live EC value.
-    - "Mera EC kitna hai?" → Reply only with the current live EC value.
-    - "Temperature?" → Reply only with the current live temperature value.
-      
-      13. Never spell "SENSOTECH" letter by letter. Always pronounce it naturally as "Senso Tech".;
-   14. Never explain what EC, pH, moisture, temperature, or NPK means unless the user explicitly asks "What is EC?" or "What is pH?". If the user asks only for a value, return only the live value with its unit.`;
+  try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [{ role: "user", parts: [{ text: question }] }],
@@ -81,7 +69,6 @@ If the question is unrelated to farming and unrelated to customer care requests,
       },
     });
 
-    // Try multiple access patterns — SDK version differences
     const answer: string =
       response.text ||
       (response as any).candidates?.[0]?.content?.parts?.[0]?.text ||
@@ -100,46 +87,29 @@ If the question is unrelated to farming and unrelated to customer care requests,
     );
 
     if (!answer) {
-      res
-        .status(500)
-        .json({
-          answer: "AI response was empty. Please try again.",
-          confidence: "low",
-        });
+      res.status(502).json({ error: "AI response was empty" });
       return;
     }
 
     // Sanitize brand name and crop name — catch any AI misspellings
-    let sanitized = answer;
-    // Fix SENSOTECH variants (Sensotech, sensotech, SENSOTECH, SENSOTECH, etc.) 
-    sanitized = sanitized.replace(/Sensotech/gi, "SENSOTECH");
-    // Fix Cotton translations in Hindi/Marathi
-    const cottonVariants = [
-      "Kapas",
-      "kapas",
-      "कपास",
-      "कापूस",
-      "कपास",
-      "कापूस",
-      "कापस",
-    ];
+    let sanitized = answer.replace(/Sensotech/gi, "SENSOTECH");
+    const cottonVariants = ["Kapas", "kapas", "कपास", "कापूस", "कपास", "कापूस", "कापस"];
     for (const v of cottonVariants) {
       const re = new RegExp(v, "g");
       sanitized = sanitized.replace(re, "Cotton");
     }
 
     res.json({ answer: sanitized, confidence: "high" });
-  } catch (error) {
-    req.log.error({ error }, "Farm AI error");
-    res.status(500).json({
-      answer:
-        language === "mr"
-          ? "माफ करा, AI सध्या उपलब्ध नाही. कृपया पुन्हा प्रयत्न करा."
-          : language === "hi"
-            ? "माफ करें, AI अभी उपलब्ध नहीं है। कृपया दोबारा कोशिश करें।"
-            : "Sorry, AI is temporarily unavailable. Please try again.",
-      confidence: "low",
-    });
+  } catch (error: unknown) {
+    req.log.error({ err: error instanceof Error ? { message: error.message, stack: error.stack } : String(error) }, "Farm AI error");
+
+    const isConfigError = error instanceof Error && /not configured/i.test(error.message);
+
+    if (isConfigError) {
+      res.status(503).json({ error: "AI service not configured" });
+    } else {
+      res.status(502).json({ error: "AI service temporarily unavailable" });
+    }
   }
 });
 
