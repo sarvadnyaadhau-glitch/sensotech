@@ -26,3 +26,16 @@ export function getAIClient(): GoogleGenAI {
 
   return _ai;
 }
+
+// Compatibility export: preserve the previous `ai` shape so existing imports keep working.
+// The object proxies calls to the lazy-initialized client when used.
+export const ai = {
+  models: {
+    async generateContent(...args: any[]) {
+      const client = getAIClient();
+      // @ts-ignore - forward to SDK
+      return client.models.generateContent(...args);
+    },
+    // If other model methods are required elsewhere, add proxy methods here.
+  },
+};
